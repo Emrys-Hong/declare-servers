@@ -13,9 +13,9 @@ from py3nvml.py3nvml import (
     nvmlShutdown,
 )
 
+from scheme import header
 
 SIZE = 20000
-header = ["date", "time", "user", "command", "memory_usage"]
 def get_gpu_usage():
     nvmlInit()
     gpu_usage = []
