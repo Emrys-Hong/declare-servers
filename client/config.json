@@ -1,0 +1,6 @@
+{
+    "server_address": "serverapi.piphi.dev",
+    "report_key": "emrys",
+    "report_interval": 10,
+    "logger_level": "info"
+}
