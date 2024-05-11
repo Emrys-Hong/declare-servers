@@ -6,3 +6,4 @@ streamlit
 uvicorn
 fastapi
 streamlit-authenticator
+puts

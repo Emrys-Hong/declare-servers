@@ -108,11 +108,11 @@ def gpu_usage_history():
 
 def get_server_status():
     try:
-        response = requests.get("http://localhost:5000/server_status/")
+        params = {'view_key': 'PxHWZArEKqMEnb9N6c9M'}
+        response = requests.get("http://localhost:5000/server_status/", params=params)
         if response.status_code == 200:
             items = response.json()
-            breakpoint()
-    except Exception:
+    except Exception as e:
         print("server status unaccessible")
 
 
@@ -122,15 +122,13 @@ def main():
     password = st.text_input("Admin code here:", type="password")
     if st.button("login"):
         if password == correctpassword:
-            st.experimental_rerun()
+            st.markdown('else')
+            gpu_usage_history()
         else:
             st.error("The password is incorrect")
 
+    get_server_status()
     # Admin part (optional)
-    if "is_logged_in" not in st.session_state or st.session_state.is_logged_in:
-        st.session_state.is_logged_in = password == correctpassword
-        if st.session_state.is_logged_in:
-            gpu_usage_history()
 
     return
 

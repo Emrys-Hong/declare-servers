@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from puts import get_logger
 
-import database.DB as db
+from database import DB as db
 from data_model import MachineStatus
 
 logger = get_logger()
@@ -20,7 +20,7 @@ logger.setLevel(INFO)
 app = FastAPI()
 origins = [
     "http://localhost",
-    "http://localhost:8080",
+    "http://localhost:8501",
     "*",
 ]
 
@@ -85,14 +85,17 @@ async def report_status(status: MachineStatus):
 
 
 @app.get("/server_status", status_code=200, response_model=List[MachineStatus])
-async def view_status(view_key: str):
+def view_status(view_key):
     """
     GET Endpoint for receiving view request from web (users).
     Incoming view request needs to have a valid view_key.
     """
     try:
-        return db.get_status(view_key)
+        if view_key == "PxHWZArEKqMEnb9N6c9M":
+            return db.get_status()
     except ValueError as e:
+        print(e)
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
