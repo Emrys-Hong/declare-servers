@@ -15,6 +15,7 @@ class Database:
         self.STATUS_DATA: Dict[str, List[MachineStatus]] = self.load()
 
     def add(self, status: MachineStatus):
+        # TODO to verify the key checking like below
         machine_id = status.machine_id
         status_list = self.STATUS_DATA[machine_id]
         status_list.append(status)
@@ -33,6 +34,10 @@ class Database:
     def save(self):
         with open(self.filename, "w") as f:
             json.dump(self.STATUS_DATA, f)
+    def get_status(self):
+        machine_ids = sorted(list(self.STATUS_DATA.keys()), reverse=True)
+        machine_status = [self.STATUS_DATA[machine_id][-1] for machine_id in machine_ids]
+        return machine_status
 
 
 DB = Database(filename="./database.json")

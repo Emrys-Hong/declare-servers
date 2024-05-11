@@ -1,39 +1,12 @@
 import os
 from datetime import datetime, timedelta
 
-from scheme import header
 import numpy as np
 import pandas as pd
+import requests
 import streamlit as st
 
-def get_ip_list(directory="."):
-    return [f.split("_")[0] for f in os.listdir(directory) if f.endswith(".csv")]
-
-
-def remove_slash(s):
-    return "".join(x for i, x in enumerate(s) if i == 0 or x != s[i - 1])
-
-
-def parse_content(du_file):
-    with open(du_file, "r") as file:
-        content = file.readlines()
-    lst = [content[0]]  # execution time
-    for i in range(1, len(content)):
-        if content[i] != content[i - 1]:
-            if len(content[i].strip()) > 0:
-                du, user = content[i].split()
-                if du == "0":
-                    continue
-                if "lost+found" in user:
-                    continue
-                if user == "total":
-                    # content[i+1] : 4.0K	/mnt/data1/emrys
-                    user = content[i + 1].split()[1]
-                    user = "/".join(user.split("/")[:-1])
-                    lst.append("\n")
-                user = remove_slash(user)
-                lst.append(du + "\t" + user)
-    return "\n".join(lst).strip()
+from scheme import header
 
 
 def moving_average(data, window_size=5):
@@ -42,8 +15,7 @@ def moving_average(data, window_size=5):
     return data
 
 
-
-def main(ip):
+def gpu_usage_history_per_server(ip):
     csvs = {
         ip: pd.read_csv(f"{ip}_gpu_log.csv", on_bad_lines="skip", names=header)
         for ip in ip_list
@@ -113,11 +85,12 @@ def main(ip):
             st.text_area("Disk Usage:", content, height=800)  # Adjust height as needed
 
 
-if __name__ == "__main__":
-    current_server_ip = "172.17.240.73"
-    ip_list = get_ip_list() + [current_server_ip]
+def header():
+    st.title("DeCLaRe Server Status")
 
-    st.title("DeCLaRe Admin GPU & Disk Monitoring")
+
+def gpu_usage_history():
+
     chart_option = st.selectbox(
         "Select Machine for gpu and disk usage: ", ["Total"] + ip_list
     )
@@ -130,4 +103,37 @@ if __name__ == "__main__":
         )
     time_span = st.radio("Usage History in Days", ("1", "3", "7", "30"))
 
-    main(chart_option)
+    gpu_usage_history_per_server(chart_option)
+
+
+def get_server_status():
+    try:
+        response = requests.get("http://localhost:5000/server_status/")
+        if response.status_code == 200:
+            items = response.json()
+            breakpoint()
+    except Exception:
+        print("server status unaccessible")
+
+
+
+def main():
+    correctpassword = "password"
+    password = st.text_input("Admin code here:", type="password")
+    if st.button("login"):
+        if password == correctpassword:
+            st.experimental_rerun()
+        else:
+            st.error("The password is incorrect")
+
+    # Admin part (optional)
+    if "is_logged_in" not in st.session_state or st.session_state.is_logged_in:
+        st.session_state.is_logged_in = password == correctpassword
+        if st.session_state.is_logged_in:
+            gpu_usage_history()
+
+    return
+
+
+if __name__ == "__main__":
+    main()

@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from puts import get_logger
 
-import database as db
+import database.DB as db
 from data_model import MachineStatus
 
 logger = get_logger()
@@ -69,7 +69,7 @@ async def report_status(status: MachineStatus):
     Invalid report_key will be rejected.
     """
     try:
-        # db.store_new_report(status)
+        db.add(status)
         logger.debug(
             f"Received status report from: {status.name} (report_key: {status.report_key})"
         )
@@ -84,14 +84,14 @@ async def report_status(status: MachineStatus):
 ## Web ENDPOINTS
 
 
-@app.get("/view", status_code=200, response_model=List[MachineStatus])
+@app.get("/server_status", status_code=200, response_model=List[MachineStatus])
 async def view_status(view_key: str):
     """
     GET Endpoint for receiving view request from web (users).
     Incoming view request needs to have a valid view_key.
     """
     try:
-        return db.get_view(view_key)
+        return db.get_status(view_key)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
