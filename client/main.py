@@ -20,7 +20,7 @@ from data_model import GPUComputeProcess, GPUStatus, MachineStatus
 from helpers import guid
 from puts import get_logger
 
-curr_dir = Path(__file__).resolve().parent
+curr_dir = Path(__file__).resolve().parent.parent
 CONFIG_PATH = curr_dir / "config.json"
 
 # we get a customised logger from puts with max file size of 10MB
@@ -39,7 +39,7 @@ with CONFIG_PATH.open(mode="r") as f:
     configs = json.load(f)
 
 # get value from configs
-SERVER = str(configs.get("server_address", ""))
+SERVER = str(configs.get("api_address", ""))
 REPORT_KEY = str(configs.get("report_key", ""))
 INTERVAL = int(configs.get("report_interval", 5))
 LOGGER_LVL = str(configs.get("logger_level", "INFO")).upper()

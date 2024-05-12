@@ -7,6 +7,18 @@ import requests
 import streamlit as st
 
 from scheme import header
+from pathlib import Path
+import json
+
+curr_dir = Path(__file__).resolve().parent.parent
+CONFIG_PATH = curr_dir / "config.json"
+
+if not CONFIG_PATH.exists():
+    logger.error(f"Config file not found: {CONFIG_PATH}")
+    sys.exit(1)
+
+with CONFIG_PATH.open(mode="r") as f:
+    configs = json.load(f)
 
 
 def moving_average(data, window_size=5):
@@ -108,8 +120,8 @@ def gpu_usage_history():
 
 def get_server_status():
     try:
-        params = {'view_key': 'PxHWZArEKqMEnb9N6c9M'}
-        response = requests.get("http://localhost:5000/server_status/", params=params)
+        params = {'view_key': configs['view_key']}
+        response = requests.get(f"http://localhost:{configs['server_port']}/server_status/", params=params)
         if response.status_code == 200:
             items = response.json()
     except Exception as e:

@@ -1,18 +1,31 @@
 import os
 import sys
 from datetime import datetime
+import json
 from logging import DEBUG, INFO
 from typing import List, Union
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from puts import get_logger
+from pathlib import Path
 
 from database import DB as db
 from data_model import MachineStatus
 
 logger = get_logger()
 logger.setLevel(INFO)
+
+
+curr_dir = Path(__file__).resolve().parent.parent
+CONFIG_PATH = curr_dir / "config.json"
+
+if not CONFIG_PATH.exists():
+    logger.error(f"Config file not found: {CONFIG_PATH}")
+    sys.exit(1)
+
+with CONFIG_PATH.open(mode="r") as f:
+    configs = json.load(f)
 
 ###############################################################################
 # Constants
@@ -48,7 +61,7 @@ print()
 
 @app.get("/")
 async def hello():
-    return {"msg": "Hello, this is MXShell."}
+    return {"msg": "Hello, this is Emrys."}
 
 
 @app.get("/get", response_model=List[MachineStatus])
