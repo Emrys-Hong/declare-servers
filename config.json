@@ -1,0 +1,9 @@
+{
+    "api_address": "serverapi.aischolar.academy",
+    "web_address": "serverstatus.aischolar.academy",
+    "report_key": "PxHWZArEKqMEnb9N6c9M",
+    "report_interval": 10,
+    "logger_level": "info",
+    "server_port": 5000,
+    "web_port": 8051
+}
