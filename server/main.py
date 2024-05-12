@@ -48,7 +48,7 @@ print()
 
 @app.get("/")
 async def hello():
-    return {"msg": "Hello, this is MXShell."}
+    return {"msg": "Hello, this is Emrys."}
 
 
 @app.get("/get", response_model=List[MachineStatus])
