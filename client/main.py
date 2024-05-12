@@ -401,11 +401,14 @@ def get_disk_usage(directory):
     sorted_entries = sorted(entries, key=lambda x: x[1], reverse=True)
     return sorted_entries
 
-disk_last_run = None
+disk_last_run = datetime.datetime(year=1999, month=4, day=4, hour=7)
 disk_usage_home = None
 disk_usage_external = None
 
 def get_sys_usage() -> Dict[str, float]:
+    global disk_last_run
+    global disk_usage_home
+    global disk_usage_external
     info = {}
     try:
         info["cpu_usage"] = psutil.cpu_percent() / 100  # 0 ~ 1
@@ -416,7 +419,7 @@ def get_sys_usage() -> Dict[str, float]:
 
         # Run disk command every hour because it is computation extensive
         current_time = datetime.datetime.now()
-        if disk_last_run.hour != current_time.hour:
+        if (not disk_last_run) and (disk_last_run.hour != current_time.hour):
             disk_last_run = current_time
             disk_usage_home = get_disk_usage('/home')
             disk_usage_external = get_disk_usage('/mnt/*') + get_disk_usage('/data')
@@ -773,4 +776,5 @@ def main(debug_mode: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    main(debug_mode=True)
+    main(debug_mode=False)
+    # main(debug_mode=True)
