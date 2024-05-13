@@ -152,8 +152,6 @@ def get_public_ip() -> str:
 
 
 def get_temp_status():
-    # linux only
-    # TODO
     try:
         temp = psutil.sensors_temperatures()
         return temp
@@ -162,8 +160,6 @@ def get_temp_status():
 
 
 def get_fans_status():
-    # linux only
-    # TODO
     try:
         fans = psutil.sensors_fans()
         return fans
@@ -402,8 +398,8 @@ def get_disk_usage(directory):
     return sorted_entries
 
 disk_last_run = datetime.datetime(year=1999, month=4, day=4, hour=7)
-disk_usage_home = None
-disk_usage_external = None
+disk_usage_home = [('*GB': 'user')]
+disk_usage_external = [('*GB': 'user')]
 
 def get_sys_usage() -> Dict[str, float]:
     global disk_last_run
@@ -635,6 +631,7 @@ def get_gpu_compute_processes() -> List[GPUComputeProcess]:
         gpu_proc.gpu_uuid = row[1].strip()
         gpu_proc.gpu_index = gpu_uuid_index_map.get(gpu_proc.gpu_uuid, -1)
         gpu_proc.gpu_mem_used = float(row[2].strip(" MiB"))
+        breakpoint()
         # TODO: compute gpu memory usage percentage
         ...
 
@@ -776,5 +773,6 @@ def main(debug_mode: bool = False) -> None:
 
 
 if __name__ == "__main__":
+    get_gpu_compute_processes()
     main(debug_mode=False)
     # main(debug_mode=True)

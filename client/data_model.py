@@ -68,8 +68,8 @@ class MachineStatus(BaseModel):
     users_info: Dict[str, List[str]] = None
     # disk info
     disk_info_created_at: datetime = None
-    disk_usage_home: str = List[tuple[str, str]] # [(size, path), ...]
-    disk_usage_external: str = List[tuple[str, str]]# [(size, path), ...]
+    disk_usage_home: List[tuple[str, str]] = None # [(size, path), ...]
+    disk_usage_external: List[tuple[str, str]] = None # [(size, path), ...]
 
     @validator("created_at", pre=True, always=True)
     def default_created_at(cls, v):
