@@ -75,14 +75,13 @@ async def get_status():
 
 
 @app.post("/report", status_code=201)
-async def report_status(status: dict):
+async def report_status(status: MachineStatus):
     """
     POST Endpoint for receiving status report from client (machines under monitoring).
     Incoming status report needs to have a valid report_key.
     Invalid report_key will be rejected.
     """
     try:
-        status = MachineStatus.parse_obj(status)
         db.add(status)
         logger.debug(
             f"Received status report from: {status.name} (report_key: {status.report_key})"

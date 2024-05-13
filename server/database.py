@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime, timedelta
+from collections import defaultdict
 from typing import Dict, List
 
 from data_model import MachineStatus
@@ -21,26 +22,34 @@ class Database:
         status_list.append(status)
         current_time = datetime.now()
         two_weeks_later = status_list[0].created_at + timedelta(weeks=2)
+        print(two_weeks_later)
         if current_time >= two_weeks_later:
             status_list.pop()
+
         self.save()
 
     def load(self):
         if os.path.exists(self.filename):
             with open(self.filename, "r") as f:
-                return json.load(f)
-        return {}
+                data = json.load(f)
+                status_data = {key: [MachineStatus.parse_obj(json.loads(o)) for o in values] for key, values in data.items()}
+                return defaultdict(list, status_data)
+        return defaultdict(list)
 
     def save(self):
         with open(self.filename, "w") as f:
-            json.dump(self.STATUS_DATA, f)
+            json.dump(self.to_dict(), f)
+
     def get_status(self):
         machine_ids = sorted(list(self.STATUS_DATA.keys()), reverse=True)
         machine_status = [self.STATUS_DATA[machine_id][-1] for machine_id in machine_ids]
         return machine_status
 
+    def to_dict(self)-> dict:
+        return {key: [status.json() for status in status_list]  for key, status_list in self.STATUS_DATA.items()}
 
-DB = Database(filename="./database.json")
+
+DB = Database(filename="./machine_status.json")
 
 ###############################################################################
 ### report_status
