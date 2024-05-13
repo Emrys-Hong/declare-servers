@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from puts import get_logger
 from pathlib import Path
+import asyncio
 
 from database import DB as db
 from data_model import MachineStatus
@@ -31,6 +32,7 @@ with CONFIG_PATH.open(mode="r") as f:
 # Constants
 
 app = FastAPI()
+lock = asyncio.Lock()
 origins = [
     "http://localhost",
     "http://localhost:8501",
@@ -82,11 +84,12 @@ async def report_status(status: MachineStatus):
     Invalid report_key will be rejected.
     """
     try:
-        db.add(status)
-        logger.debug(
-            f"Received status report from: {status.name} (report_key: {status.report_key})"
-        )
-        return {"msg": "OK"}
+        async with lock:
+            db.add(status)
+            logger.debug(
+                f"Received status report from: {status.name} (report_key: {status.report_key})"
+            )
+            return {"msg": "OK"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

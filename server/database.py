@@ -14,6 +14,7 @@ class Database:
     def __init__(self, filename):
         self.filename = filename
         self.STATUS_DATA: Dict[str, List[MachineStatus]] = self.load()
+        self.last_updated = datetime.now()
 
     def add(self, status: MachineStatus):
         # TODO to verify the key checking like below
@@ -21,12 +22,18 @@ class Database:
         status_list = self.STATUS_DATA[machine_id]
         status_list.append(status)
         current_time = datetime.now()
+
+        # only keep the history for two weeks
         two_weeks_later = status_list[0].created_at + timedelta(weeks=2)
         print(two_weeks_later)
         if current_time >= two_weeks_later:
             status_list.pop()
 
-        self.save()
+        # only update machine_status.json file every hour
+        one_hour_later = self.last_updated + timedelta(hours=1)
+        if current_time >= one_hour_later:
+            self.last_updated = current_time
+            self.save()
 
     def load(self):
         if os.path.exists(self.filename):
