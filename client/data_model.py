@@ -22,7 +22,7 @@ class GPUComputeProcess(BaseModel):
     gpu_index: int = None
     gpu_mem_used: float = None  # MiB
     gpu_mem_unit: str = "MiB"
-    gpu_mem_usage: float = None  # range: [0, 1]
+    # gpu_mem_usage: float = None  # range: [0, 1]
     cpu_usage: float = None  # range: [0, 1]
     cpu_mem_usage: float = None  # range: [0, 1]
     proc_uptime: float = None  # seconds

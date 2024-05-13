@@ -398,8 +398,8 @@ def get_disk_usage(directory):
     return sorted_entries
 
 disk_last_run = datetime.datetime(year=1999, month=4, day=4, hour=7)
-disk_usage_home = [('*GB': 'user')]
-disk_usage_external = [('*GB': 'user')]
+disk_usage_home = [('*GB', 'user')]
+disk_usage_external = [('*GB', 'user')]
 
 def get_sys_usage() -> Dict[str, float]:
     global disk_last_run
@@ -631,9 +631,6 @@ def get_gpu_compute_processes() -> List[GPUComputeProcess]:
         gpu_proc.gpu_uuid = row[1].strip()
         gpu_proc.gpu_index = gpu_uuid_index_map.get(gpu_proc.gpu_uuid, -1)
         gpu_proc.gpu_mem_used = float(row[2].strip(" MiB"))
-        breakpoint()
-        # TODO: compute gpu memory usage percentage
-        ...
 
         # get more details of the process from ps
         proc_info: dict = _get_proc_info(gpu_proc.pid)
@@ -773,6 +770,5 @@ def main(debug_mode: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    get_gpu_compute_processes()
     main(debug_mode=False)
     # main(debug_mode=True)
