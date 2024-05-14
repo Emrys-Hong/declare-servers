@@ -31,11 +31,11 @@ class GPUComputeProcess(BaseModel):
     command: str = None
 
 class DiskStatus(BaseModel):
-    directory: str = None
+    directory: str = ""
     created_at: datetime = datetime.now()
     usage: float = 0 # range: [0, 1]
-    free: str = 0
-    total: str = 0
+    free: str = ""
+    total: str = ""
     detail: List[tuple[str, str]] = [('0GB', 'user')] # [(size, path), ...]
 
 class MachineStatus(BaseModel):
@@ -76,7 +76,7 @@ class MachineStatus(BaseModel):
     users_info: Dict[str, List[str]] = None
     # disk info
     disk_system: DiskStatus = None
-    disk_external: DiskStatus = None
+    disk_external: List[DiskStatus] = None
 
     @validator("created_at", pre=True, always=True)
     def default_created_at(cls, v):

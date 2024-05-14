@@ -1,9 +1,10 @@
 import datetime
-import os
 import json
+import os
 import platform
 import re
 import shlex
+import shutil
 import socket
 import subprocess
 import sys
@@ -16,10 +17,10 @@ from typing import Dict, List, Tuple
 
 import psutil
 import requests
-import shutil
-from data_model import GPUComputeProcess, GPUStatus, DiskStatus, MachineStatus
-from helpers import guid
 from puts import get_logger
+
+from data_model import DiskStatus, GPUComputeProcess, GPUStatus, MachineStatus
+from helpers import guid
 
 curr_dir = Path(__file__).resolve().parent.parent
 CONFIG_PATH = curr_dir / "config.json"
@@ -155,8 +156,9 @@ def get_temp_status():
     except Exception as e:
         logger.error(e)
 
+
 def get_max_cpu_temperature():
-    possible_keys = ['coretemp', 'k10temp', 'zenpower']
+    possible_keys = ["coretemp", "k10temp", "zenpower"]
     max_temp = None
 
     temps = psutil.sensors_temperatures()
@@ -168,6 +170,7 @@ def get_max_cpu_temperature():
                     max_temp = entry.current
 
     return max_temp
+
 
 def get_fans_status():
     try:
@@ -342,7 +345,6 @@ def get_sys_info() -> Dict[str, str]:
             mac_address=_get_mac_address(),
             cpu_model=_get_cpu_model(),
             cpu_cores=_get_cpu_cores(),
-            cpu_temp=get_max_cpu_temperature(),
         )
     except Exception as e:
         logger.error(e)
@@ -384,7 +386,8 @@ def _get_proc_info(pid: int) -> dict:
 ###############################################################################
 ## CPU & RAM & DISK
 
-def get_usage(start_path = '.'):
+
+def get_usage(start_path="."):
     total_size = 0
     for dirpath, dirnames, filenames in os.walk(start_path):
         for f in filenames:
@@ -394,23 +397,29 @@ def get_usage(start_path = '.'):
     return total_size
 
 
-
 def human_readable_size(size, decimal_places=2):
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB', 'PB']:
+    for unit in ["B", "KB", "MB", "GB", "TB", "PB"]:
         if size < 1024.0:
             break
         size /= 1024.0
     return f"{size:.{decimal_places}f}", unit
 
+
 def get_disk_detail(directory):
     entries = (os.path.join(directory, entry) for entry in os.listdir(directory))
-    entries = ((os.path.basename(path), get_usage(path)) for path in entries if os.path.isdir(path) or os.path.isfile(path))
+    entries = (
+        (os.path.basename(path), get_usage(path))
+        for path in entries
+        if os.path.isdir(path) or os.path.isfile(path)
+    )
     sorted_entries = sorted(entries, key=lambda x: x[1], reverse=True)
     return sorted_entries
+
 
 def get_disk_usage(directory):
     total, used, free = shutil.disk_usage(directory)
     return total, used, free
+
 
 def get_external_partitions():
     directories = set()
@@ -419,10 +428,12 @@ def get_external_partitions():
         usage = psutil.disk_usage(partition.mountpoint)
         if usage.total > 1e9:
             directories.add(partition.mountpoint)
-    return directories - set(['/'])
+    return directories - set(["/"])
+
 
 disk_system: DiskStatus = DiskStatus()
-disk_external: List[DiskStatus] = None
+disk_external: List[DiskStatus] = [DiskStatus()]
+
 
 def get_disk_status():
     global disk_system
@@ -430,34 +441,36 @@ def get_disk_status():
     current_time = datetime.datetime.now()
     # Run disk command every hour because it is computation extensive
     if disk_system.created_at.hour != current_time.hour:
-        total, used, free = get_disk_usage('/home')
-        disk_system.usage = used/total
+        total, used, free = get_disk_usage("/home")
+        disk_system.usage = used / total
         disk_system = DiskStatus(
-            directory = '/home',
-            created_at = current_time,
-            free = human_readable_size(free),
-            total = human_readable_size(total),
-            detail = get_disk_detail('/home'),
+            directory="/home",
+            created_at=current_time,
+            free=human_readable_size(free),
+            total=human_readable_size(total),
+            detail=get_disk_detail("/home"),
         )
 
         for partition in get_external_partitions():
             total, used, free = get_disk_usage(partition)
             disk_ext = DiskStatus(
-                directory = partition,
-                created_at = current_time,
-                usage = used/total,
-                free = human_readable_size(free),
-                total = human_readable_size(total),
-                detail = get_disk_detail(partition),
+                directory=partition,
+                created_at=current_time,
+                usage=used / total,
+                free=human_readable_size(free),
+                total=human_readable_size(total),
+                detail=get_disk_detail(partition),
             )
             disk_external.append(disk_ext)
 
     return disk_system, disk_external
 
+
 def get_sys_usage() -> Dict[str, float]:
     info = {}
     try:
         info["cpu_usage"] = psutil.cpu_percent() / 100  # 0 ~ 1
+        info["cpu_temp"] = get_max_cpu_temperature()
         mem = psutil.virtual_memory()
         info["ram_total"] = mem.total / (1024.0**2)  # MiB
         info["ram_free"] = mem.available / (1024.0**2)  # MiB
@@ -721,8 +734,8 @@ def get_status() -> MachineStatus:
     # CPU
     status.cpu_model = sys_info.get("cpu_model", "")
     status.cpu_cores = sys_info.get("cpu_cores", 0)
-    status.cpu_usage = sys_usage.get("cpu_usage", "")
     status.cpu_temp = sys_usage.get("cpu_temp", "")
+    status.cpu_usage = sys_usage.get("cpu_usage", "")
     # RAM
     status.ram_free = sys_usage.get("ram_free", "")
     status.ram_total = sys_usage.get("ram_total", "")
@@ -812,5 +825,5 @@ def main(debug_mode: bool = False) -> None:
 
 
 if __name__ == "__main__":
+    main(debug_mode=True)
     main(debug_mode=False)
-    # main(debug_mode=True)
