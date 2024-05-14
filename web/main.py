@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -129,17 +130,13 @@ def get_server_status() -> List[MachineStatus]:
     response = requests.get(url, params=params)
     if response.status_code == 200:
         items = response.json()
-    sever_status = [MachineStatus.parse_obj(item) for item in items]
+    server_status = [MachineStatus.parse_obj(item) for item in items]
     return server_status
 
-def show_server_status(server_status: List[MachineStatus]):
-    for status in server_status:
-        show_status(status)
-
-def percent_color_text(per: float, text_type: str = None) -> str:
+def percent_color_text(per: float, text: str = None) -> str:
     if not text:
         text = f"{(per * 100):.2f}%"
-    if text_type == 'temp':
+    if text == 'temp':
         text = f"{int((per * 100))}°C"
 
     if per > 0.7:
@@ -161,13 +158,13 @@ def show_gpu_status(gpu_cards):
 
     for card in gpu_cards:
         with st.container():
-            card_index = card['index']
-            gpu_model = card['gpu_model']
-            core_util = percent_color_text(card['gpu_usage'])
-            core_temp = percent_color_text(card['temperature'], 'temp')
-            mem_util = percent_color_text(card['memory_usage'])
-            mem_free = card['memory_free']
-            mem_total = card['memory_total']
+            card_index = card.index
+            gpu_model = card.gpu_name
+            core_util = percent_color_text(card.gpu_usage)
+            core_temp = percent_color_text(card.temperature, 'temp')
+            mem_util = percent_color_text(card.memory_usage)
+            mem_free = card.memory_free
+            mem_total = card.memory_total
 
             st.write(f"GPU: {card_index} {gpu_model}")
             st.markdown(f"Core Util: {core_util} \t Core Temp: {core_temp}", unsafe_allow_html=True)
@@ -192,6 +189,7 @@ def show_gpu_program(programs):
 
 
 def show_details(status: MachineStatus):
+    local_ip = dict(status.ipv4s)["enp69s0"]
     with st.expander("Details"):
         st.write(f"Last Seen: {status.created_at.strftime("%Y-%m-%d %H:%M:%S")}, Uptime: {status.uptime_str}")
         st.write(f"Arch: {status.architecture}, System: {status.linux_distro}")
@@ -199,7 +197,8 @@ def show_details(status: MachineStatus):
         st.write(f"System Disk: {status.created_at.strftime("%Y-%m-%d %H:%M:%S")}")
         st.write(status.disk_system.detail)
         st.write(f"External Disk")
-        st.write(status.disk_external.detail)
+        for ext in status.disk_external:
+            st.write(ext.detail)
         st.markdown(f"<div style='background-color: #1e1e1e; border: 2px solid #00ff00; padding: 8px; border-radius: 10px; width: max-content; margin-bottom: 20px;'>**Local IP Address**: {local_ip}</div>", unsafe_allow_html=True)
         # online user
         st.markdown("### Online", unsafe_allow_html=True)
@@ -218,10 +217,10 @@ def show_status(status: MachineStatus):
     with st.container():
         # IP
         local_ip = dict(status.ipv4s)["enp69s0"]
-        st.write(f"### Machine: {status.machine_id[-4:]} ({status.ipv4s})")
+        st.write(f"### Machine: {status.machine_id[-4:]} {local_ip}")
 
         # Online
-        is_online = (datetime(status.created_at) + timedelta(seconds=REPORT_INTERVAL)) > datetime.now()
+        is_online = (status.created_at + timedelta(seconds=REPORT_INTERVAL)) > datetime.now()
         status_line = "**Server Status**: 🟢 Online" if is_online else "**Server Status**: 🔴 Offline"
         st.markdown(status_line)
 
@@ -244,6 +243,10 @@ def show_status(status: MachineStatus):
         # TODO: GPU History
         show_gpu_history()
 
+def show_machine_status(server_status: List[MachineStatus]):
+    for status in server_status:
+        show_status(status)
+
 
 
 def main():
@@ -257,6 +260,8 @@ def main():
             st.error("The password is incorrect")
 
     machine_status = get_server_status()
+
+    show_machine_status(machine_status)
     # Admin part (optional)
 
     return
