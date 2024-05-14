@@ -9,9 +9,11 @@ import streamlit as st
 from scheme import header
 from pathlib import Path
 import json
+from data_model import MachineStatus
 
 curr_dir = Path(__file__).resolve().parent.parent
 CONFIG_PATH = curr_dir / "config.json"
+
 
 if not CONFIG_PATH.exists():
     logger.error(f"Config file not found: {CONFIG_PATH}")
@@ -20,6 +22,9 @@ if not CONFIG_PATH.exists():
 with CONFIG_PATH.open(mode="r") as f:
     configs = json.load(f)
 
+REPORT_INTERVAL = int(configs.get("report_interval", 5))
+ADMIN_PASSWORD = configs.get('admin_password', "")
+VIEW_KEY = configs.get('view_key', "")
 
 def moving_average(data, window_size=5):
     for _ in range(2):
@@ -118,28 +123,140 @@ def gpu_usage_history():
     gpu_usage_history_per_server(chart_option)
 
 
-def get_server_status():
-    try:
-        params = {'view_key': configs['view_key']}
-        response = requests.get(f"http://localhost:{configs['server_port']}/server_status/", params=params)
-        if response.status_code == 200:
-            items = response.json()
-    except Exception as e:
-        print("server status unaccessible")
+def get_server_status() -> List[MachineStatus]:
+    params = {'view_key': VIEW_KEY}
+    url = f"http://localhost:{configs['server_port']}/server_status/"
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        items = response.json()
+    sever_status = [MachineStatus.parse_obj(item) for item in items]
+    return server_status
+
+def show_server_status(server_status: List[MachineStatus]):
+    for status in server_status:
+        show_status(status)
+
+def percent_color_text(per: float, text_type: str = None) -> str:
+    if not text:
+        text = f"{(per * 100):.2f}%"
+    if text_type == 'temp':
+        text = f"{int((per * 100))}°C"
+
+    if per > 0.7:
+        text = f"<span style='color: red;'>{text}</span>"
+    else:
+        text = f"<span style='color: blue;'>{text}</span>"
+    return text
+
+
+def display_servers(users, status):
+    server_cards = ""
+    for user in users:
+        color = "#0f0" if status == "Online" else "#f00"
+        server_cards += f"<div style='flex: 1; padding: 8px; margin: 5px; border-radius: 10px; background-color: #1e1e1e; border: 2px solid {color}; color: white; font-size: 16px; display: flex; align-items: center; justify-content: center;'>{user}</div>"
+    
+    return f"<div style='display: flex; flex-wrap: wrap; justify-content: start;'>{server_cards}</div>"
+
+def show_gpu_status(gpu_cards):
+
+    for card in gpu_cards:
+        with st.container():
+            card_index = card['index']
+            gpu_model = card['gpu_model']
+            core_util = percent_color_text(card['gpu_usage'])
+            core_temp = percent_color_text(card['temperature'], 'temp')
+            mem_util = percent_color_text(card['memory_usage'])
+            mem_free = card['memory_free']
+            mem_total = card['memory_total']
+
+            st.write(f"GPU: {card_index} {gpu_model}")
+            st.markdown(f"Core Util: {core_util} \t Core Temp: {core_temp}", unsafe_allow_html=True)
+            st.markdown(f"Memory Util: {mem_util} \t (free: {mem_free} total: {mem_total})", unsafe_allow_html=True)
+
+
+def show_gpu_program(programs):
+
+    tables = []
+    for program in programs:
+        program = dict(GPU=program['gpu_index'],
+                       PID=program['pid'],
+                       User=program['user'],
+                       Uptime=program['proc_uptime_str'],
+                       CMD=program['command'],
+                       Memory=program['gpu_mem_used']
+                       )
+        tables.append(program)
+    df = pd.DataFrame(tables)
+    st.dataframe(df)
+
+
+
+def show_details(status: MachineStatus):
+    with st.expander("Details"):
+        st.write(f"Last Seen: {status.created_at.strftime("%Y-%m-%d %H:%M:%S")}, Uptime: {status.uptime_str}")
+        st.write(f"Arch: {status.architecture}, System: {status.linux_distro}")
+        st.write(f"CPU Model: {status.cpu_model}, Cores: {status.cpu_cores}")
+        st.write(f"System Disk: {status.created_at.strftime("%Y-%m-%d %H:%M:%S")}")
+        st.write(status.disk_system.detail)
+        st.write(f"External Disk")
+        st.write(status.disk_external.detail)
+        st.markdown(f"<div style='background-color: #1e1e1e; border: 2px solid #00ff00; padding: 8px; border-radius: 10px; width: max-content; margin-bottom: 20px;'>**Local IP Address**: {local_ip}</div>", unsafe_allow_html=True)
+        # online user
+        st.markdown("### Online", unsafe_allow_html=True)
+        st.markdown(display_servers(status.users_info['online_users'], "Online"), unsafe_allow_html=True)
+
+        st.markdown("### Offline", unsafe_allow_html=True)
+        st.markdown(display_servers(status.users_info['offline_users'], "Offline"), unsafe_allow_html=True)
+
+
+def show_gpu_history():
+    return 
+
+def show_status(status: MachineStatus):
+
+
+    with st.container():
+        # IP
+        local_ip = dict(status.ipv4s)["enp69s0"]
+        st.write(f"### Machine: {status.machine_id[-4:]} ({status.ipv4s})")
+
+        # Online
+        is_online = (datetime(status.created_at) + timedelta(seconds=REPORT_INTERVAL)) > datetime.now()
+        status_line = "**Server Status**: 🟢 Online" if is_online else "**Server Status**: 🔴 Offline"
+        st.markdown(status_line)
+
+        # Details
+        show_details(status)
+
+
+        # Usage
+        cpu_util = status.cpu_usage
+        st.markdown(f"CPU Util: {percent_color_text(status.cpu_usage)}, CPU Temp: {percent_color_text(status.cpu_temp, 'temp')}", unsafe_allow_html=True)
+        st.markdown(f"RAM Util: {percent_color_text(status.ram_usage)} (free: {status.ram_free}, total:{status.ram_total})", unsafe_allow_html=True)
+        st.markdown(f"System Disk Util: {percent_color_text(status.disk_system.usage)} (free: {status.disk_system.free}, total:{status.disk_system.total})", unsafe_allow_html=True)
+
+        # GPU card Usage
+        show_gpu_status(status.gpu_status)
+
+        # GPU program
+        show_gpu_program(status.gpu_compute_processes)
+
+        # TODO: GPU History
+        show_gpu_history()
 
 
 
 def main():
-    correctpassword = "password"
-    password = st.text_input("Admin code here:", type="password")
+    correctpassword = ADMIN_PASSWORD
+    password = st.text_input("Admin password here:", type="password")
+
     if st.button("login"):
         if password == correctpassword:
-            st.markdown('else')
             gpu_usage_history()
         else:
             st.error("The password is incorrect")
 
-    get_server_status()
+    machine_status = get_server_status()
     # Admin part (optional)
 
     return

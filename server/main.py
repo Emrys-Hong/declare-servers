@@ -85,11 +85,14 @@ async def report_status(status: MachineStatus):
     """
     try:
         async with lock:
-            db.add(status)
-            logger.debug(
-                f"Received status report from: {status.name} (report_key: {status.report_key})"
-            )
-            return {"msg": "OK"}
+            if status.report_key == configs['report_key']:
+                db.add(status)
+                logger.debug(
+                    f"Received status report from: {status.name} (report_key: {status.report_key})"
+                )
+                return {"msg": "OK"}
+            else:
+                raise ValueError("Report key not correct")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -107,11 +110,11 @@ def view_status(view_key):
     Incoming view request needs to have a valid view_key.
     """
     try:
-        if view_key == "PxHWZArEKqMEnb9N6c9M":
+        if view_key == configs['view_key']:
             return db.get_status()
+        else:
+            raise ValueError("View key not correct")
     except ValueError as e:
-        print(e)
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        print(e)
         raise HTTPException(status_code=500, detail=str(e))

@@ -30,6 +30,13 @@ class GPUComputeProcess(BaseModel):
     proc_uptime_str: str = None  # HH:MM:SS
     command: str = None
 
+class DiskStatus(BaseModel):
+    directory: str = None
+    created_at: datetime = None
+    usage: float = 0 # range: [0, 1]
+    free: str = 0
+    total: str = 0
+    detail: List[tuple[str, str]] = [('0GB', 'user')] # [(size, path), ...]
 
 class MachineStatus(BaseModel):
     created_at: datetime = None
@@ -57,6 +64,7 @@ class MachineStatus(BaseModel):
     cpu_model: str = None
     cpu_cores: int = None
     cpu_usage: float = None  # range: [0, 1]
+    cpu_temp: float = None
     ram_free: float = None  # MiB
     ram_total: float = None  # MiB
     ram_unit: str = "MiB"
@@ -67,9 +75,8 @@ class MachineStatus(BaseModel):
     # users info
     users_info: Dict[str, List[str]] = None
     # disk info
-    disk_info_created_at: datetime = None
-    disk_usage_home: List[tuple[str, str]] = None # [(size, path), ...]
-    disk_usage_external: List[tuple[str, str]] = None # [(size, path), ...]
+    disk_system: DiskStatus = None
+    disk_external: DiskStatus = None
 
     @validator("created_at", pre=True, always=True)
     def default_created_at(cls, v):

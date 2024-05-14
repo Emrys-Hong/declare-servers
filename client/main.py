@@ -16,7 +16,8 @@ from typing import Dict, List, Tuple
 
 import psutil
 import requests
-from data_model import GPUComputeProcess, GPUStatus, MachineStatus
+import shutil
+from data_model import GPUComputeProcess, GPUStatus, DiskStatus, MachineStatus
 from helpers import guid
 from puts import get_logger
 
@@ -147,10 +148,6 @@ def get_public_ip() -> str:
     return PUBLIC_IP
 
 
-###############################################################################
-## TODO
-
-
 def get_temp_status():
     try:
         temp = psutil.sensors_temperatures()
@@ -158,6 +155,19 @@ def get_temp_status():
     except Exception as e:
         logger.error(e)
 
+def get_max_cpu_temperature():
+    possible_keys = ['coretemp', 'k10temp', 'zenpower']
+    max_temp = None
+
+    temps = psutil.sensors_temperatures()
+
+    for key in possible_keys:
+        if key in temps:
+            for entry in temps[key]:
+                if max_temp is None or entry.current > max_temp:
+                    max_temp = entry.current
+
+    return max_temp
 
 def get_fans_status():
     try:
@@ -332,6 +342,7 @@ def get_sys_info() -> Dict[str, str]:
             mac_address=_get_mac_address(),
             cpu_model=_get_cpu_model(),
             cpu_cores=_get_cpu_cores(),
+            cpu_temp=get_max_cpu_temperature(),
         )
     except Exception as e:
         logger.error(e)
@@ -391,20 +402,59 @@ def human_readable_size(size, decimal_places=2):
         size /= 1024.0
     return f"{size:.{decimal_places}f}", unit
 
-def get_disk_usage(directory):
+def get_disk_detail(directory):
     entries = (os.path.join(directory, entry) for entry in os.listdir(directory))
     entries = ((os.path.basename(path), get_usage(path)) for path in entries if os.path.isdir(path) or os.path.isfile(path))
     sorted_entries = sorted(entries, key=lambda x: x[1], reverse=True)
     return sorted_entries
 
-disk_last_run = datetime.datetime(year=1999, month=4, day=4, hour=7)
-disk_usage_home = [('*GB', 'user')]
-disk_usage_external = [('*GB', 'user')]
+def get_disk_usage(directory):
+    total, used, free = shutil.disk_usage(directory)
+    return total, used, free
+
+def get_external_partitions():
+    directories = set()
+    partitions = psutil.disk_partitions()
+    for partition in partitions:
+        usage = psutil.disk_usage(partition.mountpoint)
+        if usage.total > 1e9:
+            directories.add(partition.mountpoint)
+    return directories - set(['/'])
+
+disk_system: DiskStatus = None
+disk_external: List[DiskStatus] = None
+
+def get_disk_status():
+    global disk_system
+    global disk_external
+    current_time = datetime.datetime.now()
+    # Run disk command every hour because it is computation extensive
+    if disk_system.disk_info_created_at.hour != current_time.hour:
+        total, used, free = get_total_disk_space('/home')
+        disk_system.usage = used/total
+        disk_system = DiskStatus(
+            disk_system.directory = '/home',
+            created_at = current_time,
+            free = human_readable_size(free),
+            total = human_readable_size(total),
+            detail = get_disk_detail('/home'),
+        )
+
+        for partition in get_external_partitions():
+            total, used, free = get_total_disk_space(partition)
+            disk_ext = DiskStatus(
+                disk_system.directory = partition,
+                created_at = current_time,
+                usage = used/total,
+                free = human_readable_size(free),
+                total = human_readable_size(total),
+                detail = get_disk_detail(partition),
+            )
+            disk_external.append(disk_ext)
+
+    return disk_system, disk_external
 
 def get_sys_usage() -> Dict[str, float]:
-    global disk_last_run
-    global disk_usage_home
-    global disk_usage_external
     info = {}
     try:
         info["cpu_usage"] = psutil.cpu_percent() / 100  # 0 ~ 1
@@ -413,15 +463,7 @@ def get_sys_usage() -> Dict[str, float]:
         info["ram_free"] = mem.available / (1024.0**2)  # MiB
         info["ram_usage"] = round(mem.percent / 100, 5)  # 0 ~ 1
 
-        # Run disk command every hour because it is computation extensive
-        current_time = datetime.datetime.now()
-        if (not disk_last_run) and (disk_last_run.hour != current_time.hour):
-            disk_last_run = current_time
-            disk_usage_home = get_disk_usage('/home')
-            disk_usage_external = get_disk_usage('/mnt/*') + get_disk_usage('/data')
-        info["disk_info_created_at"] = disk_last_run
-        info["disk_usage_home"] = disk_usage_home
-        info["disk_usage_external"] = disk_usage_external
+        info["disk_system"], info["disk_external"] = get_disk_status()
 
     except Exception as e:
         logger.error(e)
@@ -680,14 +722,14 @@ def get_status() -> MachineStatus:
     status.cpu_model = sys_info.get("cpu_model", "")
     status.cpu_cores = sys_info.get("cpu_cores", 0)
     status.cpu_usage = sys_usage.get("cpu_usage", "")
+    status.cpu_temp = sys_usage.get("cpu_temp", "")
     # RAM
     status.ram_free = sys_usage.get("ram_free", "")
     status.ram_total = sys_usage.get("ram_total", "")
     status.ram_usage = sys_usage.get("ram_usage", "")
     # DISK
-    status.disk_info_created_at = sys_usage.get("disk_info_created_at", "")
-    status.disk_usage_home = sys_usage.get("disk_usage_home", "")
-    status.disk_usage_external = sys_usage.get("disk_usage_external", "")
+    status.disk_system = sys_usage.get("disk_system", "")
+    status.disk_external = sys_usage.get("disk_external", "")
     # GPU
     if _nvidia_exist():
         status.gpu_status = get_gpu_status()
