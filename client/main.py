@@ -421,7 +421,7 @@ def get_external_partitions():
             directories.add(partition.mountpoint)
     return directories - set(['/'])
 
-disk_system: DiskStatus = None
+disk_system: DiskStatus = DiskStatus()
 disk_external: List[DiskStatus] = None
 
 def get_disk_status():
@@ -429,11 +429,11 @@ def get_disk_status():
     global disk_external
     current_time = datetime.datetime.now()
     # Run disk command every hour because it is computation extensive
-    if disk_system.disk_info_created_at.hour != current_time.hour:
-        total, used, free = get_total_disk_space('/home')
+    if disk_system.created_at.hour != current_time.hour:
+        total, used, free = get_disk_usage('/home')
         disk_system.usage = used/total
         disk_system = DiskStatus(
-            disk_system.directory = '/home',
+            directory = '/home',
             created_at = current_time,
             free = human_readable_size(free),
             total = human_readable_size(total),
@@ -441,9 +441,9 @@ def get_disk_status():
         )
 
         for partition in get_external_partitions():
-            total, used, free = get_total_disk_space(partition)
+            total, used, free = get_disk_usage(partition)
             disk_ext = DiskStatus(
-                disk_system.directory = partition,
+                directory = partition,
                 created_at = current_time,
                 usage = used/total,
                 free = human_readable_size(free),

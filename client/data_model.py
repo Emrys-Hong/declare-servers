@@ -32,7 +32,7 @@ class GPUComputeProcess(BaseModel):
 
 class DiskStatus(BaseModel):
     directory: str = None
-    created_at: datetime = None
+    created_at: datetime = datetime.now()
     usage: float = 0 # range: [0, 1]
     free: str = 0
     total: str = 0
