@@ -1,10 +1,11 @@
 import json
 import os
-from datetime import datetime, timedelta
 from collections import defaultdict
+from datetime import datetime, timedelta
 from typing import Dict, List
 
 from data_model import MachineStatus
+
 
 ###############################################################################
 ### Databse Definition and Initialization
@@ -37,7 +38,10 @@ class Database:
         if os.path.exists(self.filename):
             with open(self.filename, "r") as f:
                 data = json.load(f)
-                status_data = {key: [MachineStatus.parse_obj(json.loads(o)) for o in values] for key, values in data.items()}
+                status_data = {
+                    key: [MachineStatus.parse_obj(json.loads(o)) for o in values]
+                    for key, values in data.items()
+                }
                 return defaultdict(list, status_data)
         return defaultdict(list)
 
@@ -47,11 +51,15 @@ class Database:
 
     def get_status(self) -> List[MachineStatus]:
         machine_ids = sorted(list(self.STATUS_DATA.keys()), reverse=True)
-        machine_status = [self.STATUS_DATA[machine_id][-1] for machine_id in machine_ids]
+        machine_status = [
+            self.STATUS_DATA[machine_id][-1] for machine_id in machine_ids
+        ]
         return machine_status
 
-    def to_dict(self)-> dict:
-        return {key: [status.json() for status in status_list]  for key, status_list in self.STATUS_DATA.items()}
-
+    def to_dict(self) -> dict:
+        return {
+            key: [status.json() for status in status_list]
+            for key, status_list in self.STATUS_DATA.items()
+        }
 
 DB = Database(filename="./machine_status.json")

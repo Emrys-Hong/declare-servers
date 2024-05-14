@@ -1,17 +1,18 @@
+import json
 import os
 import sys
 from datetime import datetime
-import json
-from logging import DEBUG, INFO
-from typing import List, Union
+from logging import INFO
+from pathlib import Path
+from typing import List
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from puts import get_logger
-from pathlib import Path
 
-from database import DB as db
 from data_model import MachineStatus
+from database import DB as db
+
 
 logger = get_logger()
 logger.setLevel(INFO)
@@ -82,7 +83,7 @@ def report_status(status: MachineStatus):
     Invalid report_key will be rejected.
     """
     try:
-        if status.report_key == configs['report_key']:
+        if status.report_key == configs["report_key"]:
             db.add(status)
             logger.debug(
                 f"Received status report from: {status.name} (report_key: {status.report_key})"
@@ -107,7 +108,7 @@ async def view_status(view_key):
     Incoming view request needs to have a valid view_key.
     """
     try:
-        if view_key == configs['view_key']:
+        if view_key == configs["view_key"]:
             return db.get_status()
         else:
             raise ValueError("View key not correct")

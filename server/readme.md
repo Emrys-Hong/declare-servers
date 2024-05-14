@@ -1,12 +1,12 @@
+1. set up dns servers:
+   Type: A
+   Host: serverapi
+   Value: IP address of your server (e.g., 157.230.44.85)
+   TTL: 60 min or default
 
-1. set up dns servers: 
-Type: A
-Host: serverapi
-Value: IP address of your server (e.g., 157.230.44.85)
-TTL: 60 min or default
+2. in `/etc/nginx/sites-available/serverapi.piphi.dev`
+   create
 
-2. in `/etc/nginx/sites-available/serverapi.piphi.dev` 
-create
 ```
 server {
     listen 80;
@@ -27,16 +27,21 @@ sudo nginx -t
 ```
 
 3. restart service
+
 ```bash
 sudo systemctl restart nginx
 ```
+
 4. ssl certificate
+
 ```bash
 # sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx
 # sudo certbot renew --dry-run
 ```
+
 5.
+
 ```bash
 uvicorn main:app --reload --port 5000
 ```

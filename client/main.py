@@ -22,6 +22,7 @@ from puts import get_logger
 from data_model import DiskStatus, GPUComputeProcess, GPUStatus, MachineStatus
 from helpers import guid
 
+
 curr_dir = Path(__file__).resolve().parent.parent
 CONFIG_PATH = curr_dir / "config.json"
 
@@ -396,14 +397,12 @@ def get_usage(start_path="."):
                 total_size += os.path.getsize(fp)
     return total_size
 
-
 def human_readable_size(size, decimal_places=2):
     for unit in ["B", "KB", "MB", "GB", "TB", "PB"]:
         if size < 1024.0:
             break
         size /= 1024.0
     return f"{size:.{decimal_places}f}{unit}"
-
 
 def get_disk_detail(directory):
     entries = (os.path.join(directory, entry) for entry in os.listdir(directory))
@@ -415,11 +414,9 @@ def get_disk_detail(directory):
     sorted_entries = sorted(entries, key=lambda x: x[1], reverse=True)
     return sorted_entries
 
-
 def get_disk_usage(directory):
     total, used, free = shutil.disk_usage(directory)
     return total, used, free
-
 
 def get_external_partitions():
     directories = set()
@@ -433,8 +430,6 @@ def get_external_partitions():
 
 disk_system: DiskStatus = DiskStatus()
 disk_external: List[DiskStatus] = [DiskStatus()]
-
-
 def get_disk_status():
     global disk_system
     global disk_external
@@ -464,7 +459,6 @@ def get_disk_status():
             disk_external.append(disk_ext)
 
     return disk_system, disk_external
-
 
 def get_sys_usage() -> Dict[str, float]:
     info = {}
@@ -503,7 +497,6 @@ def _get_online_users() -> List[str]:
         return list(set(output.split()))
     else:
         return []
-
 
 def _get_all_users() -> List[str]:
     """
@@ -557,7 +550,6 @@ def _get_all_users() -> List[str]:
 
     return all_users
 
-
 def get_users_info() -> Dict[str, List[str]]:
     """
     Get a dictionary containing all users, online users and offline users.
@@ -607,7 +599,6 @@ def _nvidia_exist() -> bool:
     )
     return completed_proc.returncode == 0
 
-
 def get_gpu_status() -> List[GPUStatus]:
     """
     Get GPU utilization info via nvidia-smi command call
@@ -640,7 +631,6 @@ def get_gpu_status() -> List[GPUStatus]:
 
     return gpu_status_list
 
-
 def _get_gpu_uuid_index_map():
     """
     Get GPU uuid to index map
@@ -662,7 +652,6 @@ def _get_gpu_uuid_index_map():
         gpu_uuid_index_map[row[1].strip()] = int(row[0].strip())
 
     return gpu_uuid_index_map
-
 
 def get_gpu_compute_processes() -> List[GPUComputeProcess]:
     cmd = "nvidia-smi --query-compute-apps=pid,gpu_uuid,used_gpu_memory --format=csv"

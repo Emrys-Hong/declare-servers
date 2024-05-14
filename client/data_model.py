@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Dict, List
 
-from helpers import mask_sensitive_string
 from pydantic import BaseModel, validator
+
+from helpers import mask_sensitive_string
 
 
 class GPUStatus(BaseModel):
@@ -30,20 +31,22 @@ class GPUComputeProcess(BaseModel):
     proc_uptime_str: str = None  # HH:MM:SS
     command: str = None
 
+
 class DiskStatus(BaseModel):
     directory: str = ""
     created_at: datetime = datetime.now()
-    usage: float = 0 # range: [0, 1]
+    usage: float = 0  # range: [0, 1]
     free: str = ""
     total: str = ""
-    detail: List[tuple[str, str]] = [('0GB', 'user')] # [(size, path), ...]
+    detail: List[tuple[str, str]] = [("0GB", "user")]  # [(size, path), ...]
 
     @property
     def detail_string(self):
         text = ""
         for det in self.detail:
-            text += det[1] + ' ' + det[0] + '\n'
+            text += det[1] + " " + det[0] + "\n"
         return text
+
 
 class MachineStatus(BaseModel):
     created_at: datetime = None
