@@ -9,7 +9,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from puts import get_logger
 from pathlib import Path
-import asyncio
 
 from database import DB as db
 from data_model import MachineStatus
@@ -32,7 +31,6 @@ with CONFIG_PATH.open(mode="r") as f:
 # Constants
 
 app = FastAPI()
-lock = asyncio.Lock()
 origins = [
     "http://localhost",
     "http://localhost:8501",
@@ -77,22 +75,21 @@ async def get_status():
 
 
 @app.post("/report", status_code=201)
-async def report_status(status: MachineStatus):
+def report_status(status: MachineStatus):
     """
     POST Endpoint for receiving status report from client (machines under monitoring).
     Incoming status report needs to have a valid report_key.
     Invalid report_key will be rejected.
     """
     try:
-        async with lock:
-            if status.report_key == configs['report_key']:
-                db.add(status)
-                logger.debug(
-                    f"Received status report from: {status.name} (report_key: {status.report_key})"
-                )
-                return {"msg": "OK"}
-            else:
-                raise ValueError("Report key not correct")
+        if status.report_key == configs['report_key']:
+            db.add(status)
+            logger.debug(
+                f"Received status report from: {status.name} (report_key: {status.report_key})"
+            )
+            return {"msg": "OK"}
+        else:
+            raise ValueError("Report key not correct")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -104,7 +101,7 @@ async def report_status(status: MachineStatus):
 
 
 @app.get("/server_status", status_code=200, response_model=List[MachineStatus])
-def view_status(view_key):
+async def view_status(view_key):
     """
     GET Endpoint for receiving view request from web (users).
     Incoming view request needs to have a valid view_key.

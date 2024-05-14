@@ -183,22 +183,23 @@ def show_gpu_program(programs):
                        Memory=program['gpu_mem_used']
                        )
         tables.append(program)
-    df = pd.DataFrame(tables)
-    st.dataframe(df)
+    if tables:
+        df = pd.DataFrame(tables)
+        st.dataframe(df)
 
 
 
 def show_details(status: MachineStatus):
     local_ip = dict(status.ipv4s)["enp69s0"]
     with st.expander("Details"):
-        st.write(f"Last Seen: {status.created_at.strftime("%Y-%m-%d %H:%M:%S")}, Uptime: {status.uptime_str}")
+        st.write(f"Last Seen: {status.created_at.strftime('%Y-%m-%d %H:%M:%S')}, Uptime: {status.uptime_str}")
         st.write(f"Arch: {status.architecture}, System: {status.linux_distro}")
         st.write(f"CPU Model: {status.cpu_model}, Cores: {status.cpu_cores}")
-        st.write(f"System Disk: {status.created_at.strftime("%Y-%m-%d %H:%M:%S")}")
-        st.write(status.disk_system.detail)
+        st.write(f"System Disk: {status.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
+        st.write(status.disk_system.detail_string)
         st.write(f"External Disk")
         for ext in status.disk_external:
-            st.write(ext.detail)
+            st.write(ext.detail_string)
         st.markdown(f"<div style='background-color: #1e1e1e; border: 2px solid #00ff00; padding: 8px; border-radius: 10px; width: max-content; margin-bottom: 20px;'>**Local IP Address**: {local_ip}</div>", unsafe_allow_html=True)
         # online user
         st.markdown("### Online", unsafe_allow_html=True)
@@ -250,6 +251,7 @@ def show_machine_status(server_status: List[MachineStatus]):
 
 
 def main():
+    header()
     correctpassword = ADMIN_PASSWORD
     password = st.text_input("Admin password here:", type="password")
 

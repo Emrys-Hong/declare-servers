@@ -38,6 +38,13 @@ class DiskStatus(BaseModel):
     total: str = ""
     detail: List[tuple[str, str]] = [('0GB', 'user')] # [(size, path), ...]
 
+    @property
+    def detail_string(self):
+        text = ""
+        for det in self.detail:
+            text += det[1] + ' ' + det[0] + '\n'
+        return text
+
 class MachineStatus(BaseModel):
     created_at: datetime = None
     name: str = None

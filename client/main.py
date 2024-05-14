@@ -402,7 +402,7 @@ def human_readable_size(size, decimal_places=2):
         if size < 1024.0:
             break
         size /= 1024.0
-    return f"{size:.{decimal_places}f}", unit
+    return f"{size:.{decimal_places}f}{unit}"
 
 
 def get_disk_detail(directory):
