@@ -814,5 +814,4 @@ def main(debug_mode: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    main(debug_mode=True)
     main(debug_mode=False)
