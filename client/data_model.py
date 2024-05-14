@@ -72,9 +72,8 @@ class MachineStatus(BaseModel):
     cpu_cores: int = None
     cpu_usage: float = None  # range: [0, 1]
     cpu_temp: float = None
-    ram_free: float = None  # MiB
-    ram_total: float = None  # MiB
-    ram_unit: str = "MiB"
+    ram_free: str = None  # MiB
+    ram_total: str = None  # MiB
     ram_usage: float = None  # range: [0, 1]
     # gpu usage
     gpu_status: List[GPUStatus] = None

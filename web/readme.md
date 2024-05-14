@@ -1,3 +1,3 @@
 ```bash
-streamlit run main.py --server.port 8051
+streamlit run main.py --server.port 8501
 ```

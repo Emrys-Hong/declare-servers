@@ -137,7 +137,7 @@ def percent_color_text(per: float, text: str = None) -> str:
     if not text:
         text = f"{(per * 100):.2f}%"
     if text == 'temp':
-        text = f"{int((per * 100))}°C"
+        text = f"{int(per)}°C"
 
     if per > 0.7:
         text = f"<span style='color: red;'>{text}</span>"
@@ -202,11 +202,8 @@ def show_details(status: MachineStatus):
             st.write(ext.detail_string)
         st.markdown(f"<div style='background-color: #1e1e1e; border: 2px solid #00ff00; padding: 8px; border-radius: 10px; width: max-content; margin-bottom: 20px;'>**Local IP Address**: {local_ip}</div>", unsafe_allow_html=True)
         # online user
-        st.markdown("### Online", unsafe_allow_html=True)
-        st.markdown(display_servers(status.users_info['online_users'], "Online"), unsafe_allow_html=True)
+        st.markdown("Online: " + display_servers(status.users_info['online_users'], "Online") + "|" + "Offline: " + display_servers(status.users_info['offline_users'], "Offline"), unsafe_allow_html=True)
 
-        st.markdown("### Offline", unsafe_allow_html=True)
-        st.markdown(display_servers(status.users_info['offline_users'], "Offline"), unsafe_allow_html=True)
 
 
 def show_gpu_history():

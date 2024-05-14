@@ -472,8 +472,8 @@ def get_sys_usage() -> Dict[str, float]:
         info["cpu_usage"] = psutil.cpu_percent() / 100  # 0 ~ 1
         info["cpu_temp"] = get_max_cpu_temperature()
         mem = psutil.virtual_memory()
-        info["ram_total"] = mem.total / (1024.0**2)  # MiB
-        info["ram_free"] = mem.available / (1024.0**2)  # MiB
+        info["ram_total"] = human_readable_size(mem.total)
+        info["ram_free"] = human_readable_size(mem.available)
         info["ram_usage"] = round(mem.percent / 100, 5)  # 0 ~ 1
 
         info["disk_system"], info["disk_external"] = get_disk_status()
