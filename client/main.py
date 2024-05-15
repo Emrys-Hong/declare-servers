@@ -412,6 +412,7 @@ def get_disk_detail(directory):
         if os.path.isdir(path) or os.path.isfile(path)
     )
     sorted_entries = sorted(entries, key=lambda x: x[1], reverse=True)
+    sorted_entries = [(user, human_readable_size(usage)) for (user, usage) in sorted_entries]
     return sorted_entries
 
 def get_disk_usage(directory):
@@ -438,12 +439,13 @@ def get_disk_status():
     if disk_system.created_at.hour != current_time.hour:
         total, used, free = get_disk_usage("/home")
         disk_system.usage = used / total
+        details = get_disk_detail("/home")
         disk_system = DiskStatus(
             directory="/home",
             created_at=current_time,
             free=human_readable_size(free),
             total=human_readable_size(total),
-            detail=get_disk_detail("/home"),
+            detail=details,
         )
 
         for partition in get_external_partitions():
