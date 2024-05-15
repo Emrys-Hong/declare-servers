@@ -463,7 +463,7 @@ def get_disk_status():
     global disk_external
     current_time = datetime.datetime.now()
     # Run disk command every hour because it is computation extensive
-    if disk_system.created_at.hour != current_time.hour:
+    if disk_system.created_at + datetime.timedelta(seconds=configs['disk_report_interval']) < current_time:
         total, used, free = get_disk_usage("/home")
         disk_system.usage = used / total
         details = get_disk_detail("/home")

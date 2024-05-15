@@ -2,9 +2,18 @@ import json
 import os
 from collections import defaultdict
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Dict, List
 
 from data_model import MachineStatus
+
+
+curr_dir = Path(__file__).resolve().parent.parent
+CONFIG_PATH = curr_dir / "config.json"
+
+
+with CONFIG_PATH.open(mode="r") as f:
+    configs = json.load(f)
 
 
 ###############################################################################
@@ -24,14 +33,16 @@ class Database:
         current_time = datetime.now()
 
         # only keep the history for two weeks
-        two_weeks_later = status_list[0].created_at + timedelta(weeks=2)
-        # TODO
+        two_weeks_later = status_list[0].created_at + timedelta(
+            days=configs["history_days"]
+        )
         if current_time >= two_weeks_later:
             status_list.pop()
 
         # only update machine_status.json file every hour
-        one_hour_later = self.last_updated + timedelta(hours=1)
-        # TODO
+        one_hour_later = self.last_updated + timedelta(
+            seconds=configs["write_interval"]
+        )
         if current_time >= one_hour_later:
             self.last_updated = current_time
             self.save()
@@ -63,5 +74,6 @@ class Database:
             key: [status.json() for status in status_list]
             for key, status_list in self.STATUS_DATA.items()
         }
+
 
 DB = Database(filename="./machine_status.json")
