@@ -463,7 +463,11 @@ def get_disk_status():
     global disk_external
     current_time = datetime.datetime.now()
     # Run disk command every hour because it is computation extensive
-    if disk_system.created_at + datetime.timedelta(seconds=configs['disk_report_interval']) < current_time:
+    if (
+        disk_system.created_at
+        + datetime.timedelta(seconds=configs["disk_report_interval"])
+        < current_time
+    ):
         total, used, free = get_disk_usage("/home")
         disk_system.usage = used / total
         details = get_disk_detail("/home")
@@ -758,6 +762,8 @@ def get_status() -> MachineStatus:
     status.processor = sys_info.get("processor", "")
     status.uptime = sys_info.get("uptime", 0.0)
     status.uptime_str = sys_info.get("uptime_str", "")
+    status.nvidia_smi_version = sys_info.get("nvidia_smi_version", "")
+    status.cuda_version = sys_info.get("cuda_version", "")
     # CPU
     status.cpu_model = sys_info.get("cpu_model", "")
     status.cpu_cores = sys_info.get("cpu_cores", 0)
