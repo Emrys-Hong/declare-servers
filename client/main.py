@@ -474,9 +474,9 @@ def get_disk_status():
         disk_system = DiskStatus(
             directory="/home",
             created_at=current_time,
+            usage=(used / total),
             free=human_readable_size(free),
             total=human_readable_size(total),
-            usage=(used / total),
             detail=details,
         )
 
@@ -489,7 +489,6 @@ def get_disk_status():
                 usage=used / total,
                 free=human_readable_size(free),
                 total=human_readable_size(total),
-                usage=(used / total),
                 detail=get_disk_detail(partition),
             )
             disk_external.append(disk_ext)
