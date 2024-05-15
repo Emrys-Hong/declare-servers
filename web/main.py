@@ -291,9 +291,10 @@ def show_status(status: MachineStatus):
         status_line = "🟢[Online]" if is_online else "🔴[Offline]"
 
         st.header(
-            f"### {status_line} {status.machine_id[-4:]}: ({local_ip})",
+            local_ip,
             divider="rainbow",
         )
+        st.markdown(f"### {status_line} {status.machine_id[-4:]}: ({local_ip})")
 
         # Details
         show_details(status)
@@ -321,7 +322,7 @@ def show_status(status: MachineStatus):
         # GPU program
         show_gpu_program(status.gpu_compute_processes)
 
-        # TODO: GPU History
+        # GPU History
         show_gpu_history()
 
 
@@ -332,19 +333,9 @@ def show_machine_status(server_status: List[MachineStatus]):
 
 def main():
     header()
-    correctpassword = ADMIN_PASSWORD
-    password = st.text_input("Admin password here:", type="password")
-
-    if st.button("login"):
-        if password == correctpassword:
-            gpu_usage_history()
-        else:
-            st.error("The password is incorrect")
-
     machine_status = get_server_status()
 
     show_machine_status(machine_status)
-    # Admin part (optional)
 
     return
 

@@ -76,8 +76,8 @@ class MachineStatus(BaseModel):
     uptime: float = None  # seconds
     uptime_unit: str = "seconds"
     uptime_str: str = None
-    cuda_version: str = None
-    nvidia_smi_version: str = None
+    cuda_version: str = "No CUDA Installed"
+    nvidia_smi_version: str = "No GPU Driver installed"
     # sys usage
     cpu_model: str = None
     cpu_cores: int = None
