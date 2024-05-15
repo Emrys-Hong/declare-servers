@@ -200,7 +200,7 @@ def show_gpu_history(df):
     if len(df) > 0:
         df.time = pd.to_datetime(df.time)
         grouped_df = (
-            df.groupby([pd.Grouper(key="time", freq="1H"), "user"])
+            df.groupby([pd.Grouper(key="time", freq="1h"), "user"])
             .size()
             .reset_index(name="count")
         )
