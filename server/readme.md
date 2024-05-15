@@ -45,3 +45,8 @@ sudo certbot --nginx
 ```bash
 uvicorn main:app --reload --port 5000
 ```
+
+6. set server time
+```
+sudo timedatectl set-timezone Asia/Singapore
+```

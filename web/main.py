@@ -10,7 +10,6 @@ import requests
 import streamlit as st
 
 from data_model import MachineStatus
-from scheme import header
 
 
 curr_dir = Path(__file__).resolve().parent.parent
@@ -134,16 +133,17 @@ def show_gpu_program(programs):
     tables = []
     for program in programs:
         program = dict(
-            GPU=program["gpu_index"],
-            PID=program["pid"],
-            User=program["user"],
-            Uptime=program["proc_uptime_str"],
-            CMD=program["command"],
-            Memory=program["gpu_mem_used"],
+            GPU=program.gpu_index,
+            PID=program.pid,
+            User=program.user,
+            Uptime=program.proc_uptime_str,
+            CMD=program.command,
+            Memory_MB=program.gpu_mem_used,
         )
         tables.append(program)
     if tables:
         df = pd.DataFrame(tables)
+        df = df.reset_index(drop=True)
         st.dataframe(df)
 
 
@@ -198,6 +198,7 @@ def show_details(status: MachineStatus):
 
 def show_gpu_history(df):
     if len(df) > 0:
+        df.time = pd.to_datetime(df.time)
         grouped_df = (
             df.groupby([pd.Grouper(key="time", freq="1H"), "user"])
             .size()
@@ -211,8 +212,10 @@ def show_gpu_history(df):
             3600 / configs["report_interval"]
         )  # one hour have 360 ten seconds interval
 
-        for col in table.columns:
-            table[col] = moving_average(table[col])
+        window_size = 5
+        if len(table) > window_size:
+            for col in table.columns:
+                table[col] = moving_average(table[col], window_size)
 
         with st.expander("GPU log"):
             st.line_chart(table)
