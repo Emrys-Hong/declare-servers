@@ -25,11 +25,13 @@ class Database:
 
         # only keep the history for two weeks
         two_weeks_later = status_list[0].created_at + timedelta(weeks=2)
+        # TODO
         if current_time >= two_weeks_later:
             status_list.pop()
 
         # only update machine_status.json file every hour
         one_hour_later = self.last_updated + timedelta(hours=1)
+        # TODO
         if current_time >= one_hour_later:
             self.last_updated = current_time
             self.save()

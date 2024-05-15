@@ -31,6 +31,10 @@ class GPUComputeProcess(BaseModel):
     proc_uptime_str: str = None  # HH:MM:SS
     command: str = None
 
+    @validator("user", pre=True, always=True)
+    def process_gpu_compute_info(cls, v):
+        return mask_sensitive_string(v)
+
 
 class DiskStatus(BaseModel):
     directory: str = ""
@@ -40,12 +44,16 @@ class DiskStatus(BaseModel):
     total: str = ""
     detail: List[tuple[str, str]] = [("0GB", "user")]  # [(size, path), ...]
 
-    @property
-    def detail_string(self):
-        text = ""
-        for det in self.detail:
-            text += det[1] + " " + det[0] + "\n"
-        return text
+    @validator("detail", pre=True, always=True)
+    def process_disk_system_info(cls, v):
+        if isinstance(v, List):
+            for i, (user, usage) in enumerate(v):
+                v[i] = [usage, mask_sensitive_string(user)]
+            return v
+        else:
+            []
+
+
 
 
 class MachineStatus(BaseModel):
@@ -70,6 +78,8 @@ class MachineStatus(BaseModel):
     uptime: float = None  # seconds
     uptime_unit: str = "seconds"
     uptime_str: str = None
+    cuda_version: str = None
+    nvidia_smi_version: str = None
     # sys usage
     cpu_model: str = None
     cpu_cores: int = None
@@ -99,6 +109,8 @@ class MachineStatus(BaseModel):
             return v
         else:
             return {}
+
+
 
     def __repr__(self) -> str:
         return self.model_dump_json()

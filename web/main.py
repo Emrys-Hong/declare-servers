@@ -150,18 +150,42 @@ def percent_color_text(per: float, text: str = None) -> str:
     return text
 
 
-def display_servers(users, status):
-    server_cards = ""
-    for user in users:
-        color = "#0f0" if status == "Online" else "#f00"
-        server_cards += f"<div style='flex: 1; padding: 8px; margin: 5px; border-radius: 10px; background-color: #1e1e1e; border: 2px solid {color}; color: white; font-size: 16px; display: flex; align-items: center; justify-content: center;'>{user}</div>"
+def display_servers_html(online_users, offline_users):
+    online_users_text, offline_users_text = "", ""
+    for user in online_users:
+        online_users_text += f"<div style='flex: 0; padding: 8px; margin: 5px; border-radius: 10px; background-color: transparent; border: 2px solid green; color: black; font-size: 10px; display: flex;'>{user}</div>"
+    for user in offline_users:
+        offline_users_text += f"<div style='flex: 0; padding: 8px; margin: 5px; border-radius: 10px; background-color: transparent; border: 2px solid red; color: black; font-size: 10px; display: flex;'>{user}</div>"
 
-    return f"<div style='display: flex; flex-wrap: wrap; justify-content: start;'>{server_cards}</div>"
+    return f"""
+<div style='display: flex; flex-wrap: wrap; justify-content: start;'>
+<div id="user-status">Online: </div>
+{online_users_text}
+<div id="user-status">Offline: </div>
+{offline_users_text}
+</div>"""
 
+def display_disk_html(disk_detail: List):
+    for disk_usage, user in disk_detail:
+        st.write(disk_usage + ": " + user)
 
-def show_gpu_status(gpu_cards):
+def show_gpu_status_html(gpu_cards):
+    table_form = """
+    **GPU Cards**
+    <table style="margin: 20px auto; border-collapse: collapse;">
+        <tr>
+            <th style="border: 2px solid #ddd; padding: 20px; text-align: left; background-color: #f2f2f2; color: #333;">GPU</th>
+            <th style="border: 2px solid #ddd; padding: 20px; text-align: left; background-color: #f2f2f2; color: #333;">Model</th>
+            <th style="border: 2px solid #ddd; padding: 20px; text-align: left; background-color: #f2f2f2; color: #333;">Util</th>
+            <th style="border: 2px solid #ddd; padding: 20px; text-align: left; background-color: #f2f2f2; color: #333;">Temp</th>
+            <th style="border: 2px solid #ddd; padding: 20px; text-align: left; background-color: #f2f2f2; color: #333;">Memory</th>
+        </tr>
+        {table_content}
+    """
 
+    table_content = ""
     for card in gpu_cards:
+        table_content += """<tr style="background-color: #fff; hover:background-color: #f5f5f5;">\n"""
         with st.container():
             card_index = card.index
             gpu_model = card.gpu_name
@@ -170,16 +194,17 @@ def show_gpu_status(gpu_cards):
             mem_util = percent_color_text(card.memory_usage)
             mem_free = card.memory_free
             mem_total = card.memory_total
+            td = """<td style="border: 2px solid #ddd; padding: 20px; text-align: center;">"""
+            table_content += (f"{td}{card_index}</td>\n"
+            f"{td}{gpu_model}</td>\n"
+            f"{td}{core_util}</td>\n"
+            f"{td}{core_temp}</td>\n"
+            f"{td}{mem_util} \t (free: {mem_free} total: {mem_total})</td>\n"
+                              )
+        table_content += "</tr>\n"
+    return table_form.format(table_content=table_content)
 
-            st.write(f"GPU: {card_index} {gpu_model}")
-            st.markdown(
-                f"Core Util: {core_util} \t Core Temp: {core_temp}",
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                f"Memory Util: {mem_util} \t (free: {mem_free} total: {mem_total})",
-                unsafe_allow_html=True,
-            )
+
 
 
 def show_gpu_program(programs):
@@ -200,6 +225,11 @@ def show_gpu_program(programs):
         st.dataframe(df)
 
 
+def show_disk_detail(disk_status):
+    st.markdown(f"Directory: {disk_status.directory}, Usage {percent_color_text(disk_status.usage)}", unsafe_allow_html=True)
+    st.write(f"Free: {disk_status.free}, Total: {disk_status.total}")
+    display_disk_html(disk_status.detail)
+
 def show_details(status: MachineStatus):
     local_ip = dict(status.ipv4s)["enp69s0"]
     with st.expander("Details"):
@@ -207,23 +237,31 @@ def show_details(status: MachineStatus):
             f"Last Seen: {status.created_at.strftime('%Y-%m-%d %H:%M:%S')}, Uptime: {status.uptime_str}"
         )
         st.write(f"Arch: {status.architecture}, System: {status.linux_distro}")
+        st.write(f"Nvidia SMI: {status.nvidia_smi_version}")
+        st.write(f"CUDA Version: {status.cuda_version}")
         st.write(f"CPU Model: {status.cpu_model}, Cores: {status.cpu_cores}")
+        # System disk information
         st.write(f"System Disk: {status.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
-        st.write(status.disk_system.detail_string)
-        st.write(f"External Disk")
-        for ext in status.disk_external:
-            st.write(ext.detail_string)
-        st.markdown(
-            f"<div style='background-color: #1e1e1e; border: 2px solid #00ff00; padding: 8px; border-radius: 10px; width: max-content; margin-bottom: 20px;'>**Local IP Address**: {local_ip}</div>",
+        for disk_i, disk_col in enumerate(st.columns(len(status.disk_external) + 1)):
+            with disk_col:
+                if disk_i == 0:
+                    show_disk_detail(status.disk_system)
+                else:
+                    show_disk_detail(status.disk_external[disk_i-1])
+
+        # local ip
+        st.markdown(f"""
+<div style='display: flex; flex-wrap: wrap; justify-content: start;'>
+<div><b>IP Address</b> (inet)</div>
+<span style="margin-left: 40px;"></span>
+<div style='background-color: transparent; border: 2px solid #00ff00; padding: 8px; border-radius: 10px; width: max-content; margin-bottom: 8px;'>{local_ip}</div>
+</div>
+""",
             unsafe_allow_html=True,
         )
-        # online user
+        # online offline user
         st.markdown(
-            "Online: "
-            + display_servers(status.users_info["online_users"], "Online")
-            + "|"
-            + "Offline: "
-            + display_servers(status.users_info["offline_users"], "Offline"),
+            display_servers_html(status.users_info['online_users'], status.users_info["offline_users"]),
             unsafe_allow_html=True,
         )
 
@@ -237,40 +275,44 @@ def show_status(status: MachineStatus):
     with st.container():
         # IP
         local_ip = dict(status.ipv4s)["enp69s0"]
-        st.write(f"### Machine: {status.machine_id[-4:]} {local_ip}")
-
         # Online
         is_online = (
             status.created_at + timedelta(seconds=REPORT_INTERVAL)
         ) > datetime.now()
         status_line = (
-            "**Server Status**: 🟢 Online"
+            "🟢[Online]"
             if is_online
-            else "**Server Status**: 🔴 Offline"
+            else "🔴[Offline]"
         )
-        st.markdown(status_line)
+
+        st.write(f"### {status_line} {status.machine_id[-4:]}: ({local_ip})")
 
         # Details
         show_details(status)
 
+        st.markdown('---')
         # Usage
         cpu_util = status.cpu_usage
         st.markdown(
-            f"CPU Util: {percent_color_text(status.cpu_usage)}, CPU Temp: {percent_color_text(status.cpu_temp, 'temp')}",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f"RAM Util: {percent_color_text(status.ram_usage)} (free: {status.ram_free}, total:{status.ram_total})",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f"System Disk Util: {percent_color_text(status.disk_system.usage)} (free: {status.disk_system.free}, total:{status.disk_system.total})",
+                
+            f"**CPU Util:** {percent_color_text(status.cpu_usage)}"
+            "\n\n"
+            f"**CPU Temp**: {percent_color_text(status.cpu_temp, 'temp')}"
+            "\n\n"
+            f"**RAM Util:** {percent_color_text(status.ram_usage)} (*free: {status.ram_free}, total:{status.ram_total}*)"
+            "\n\n"
+            f"**System Disk Util**: {percent_color_text(status.disk_system.usage)} (*free: {status.disk_system.free}, total:{status.disk_system.total}*)",
+            
             unsafe_allow_html=True,
         )
 
+        st.markdown('---')
+        
         # GPU card Usage
-        show_gpu_status(status.gpu_status)
+        gpu_table = show_gpu_status_html(status.gpu_status)
+        st.markdown(gpu_table, unsafe_allow_html=True)
 
+        st.markdown('---')
         # GPU program
         show_gpu_program(status.gpu_compute_processes)
 

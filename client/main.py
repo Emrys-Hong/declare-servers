@@ -185,6 +185,19 @@ def get_fans_status():
 ## System
 
 
+def get_nvidia_smi_version():
+    success, smi_output = run_command("nvidia-smi")
+    if not success: return "No NVIDIA driver found"
+    for line in smi_output.split('\n'):
+        if "NVIDIA-SMI" in line:
+            return line.strip()
+
+def get_cuda_version():
+    success, nvcc_version = run_command("/usr/local/cuda/bin/nvcc --version")
+    if not success: return "CUDA not installed"
+    cuda_version = nvcc_version.split()[-1].split()[-1]
+    return cuda_version
+
 def run_command(command: str) -> Tuple[bool, str]:
     """
     Run a shell command and return the output as a string.
@@ -346,6 +359,8 @@ def get_sys_info() -> Dict[str, str]:
             mac_address=_get_mac_address(),
             cpu_model=_get_cpu_model(),
             cpu_cores=_get_cpu_cores(),
+            nvidia_smi_version=get_nvidia_smi_version(),
+            cuda_version=get_cuda_version(),
         )
     except Exception as e:
         logger.error(e)
@@ -445,9 +460,11 @@ def get_disk_status():
             created_at=current_time,
             free=human_readable_size(free),
             total=human_readable_size(total),
+            usage=(used/total),
             detail=details,
         )
 
+        disk_external = []
         for partition in get_external_partitions():
             total, used, free = get_disk_usage(partition)
             disk_ext = DiskStatus(
@@ -456,6 +473,7 @@ def get_disk_status():
                 usage=used / total,
                 free=human_readable_size(free),
                 total=human_readable_size(total),
+                usage=(used/total),
                 detail=get_disk_detail(partition),
             )
             disk_external.append(disk_ext)
