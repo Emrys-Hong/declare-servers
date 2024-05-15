@@ -157,7 +157,20 @@ def show_disk_detail(disk_status):
 
 
 def show_details(status: MachineStatus):
-    local_ip = dict(status.ipv4s)["enp69s0"]
+    ipv4 = dict(status.ipv4s)
+    if "enp69s0" in ipv4:
+        local_ip = ipv4["enp69s0"]
+    elif "eno1" in ipv4:
+        local_ip = ipv4["eno1"]
+    elif 'enp35s0f0' in ipv4:
+        local_ip = ipv4['enp35s0f0']
+    elif 'ens8f0' in ipv4:
+        local_ip = ipv4['ens8f0']
+    elif 'enp68s0' in ipv4:
+        local_ip = ipv4['enp68s0']
+    else:
+        breakpoint()
+
     with st.expander("Details"):
         st.markdown(
             f"**Last Seen**: {status.created_at.strftime('%Y-%m-%d %H:%M:%S')}, **Uptime**: {status.uptime_str}"
@@ -225,7 +238,19 @@ def show_status(status: MachineStatus, gpu_record: pd.DataFrame):
 
     with st.container():
         # IP
-        local_ip = dict(status.ipv4s)["enp69s0"]
+        ipv4 = dict(status.ipv4s)
+        if "enp69s0" in ipv4:
+            local_ip = ipv4["enp69s0"]
+        elif "eno1" in ipv4:
+            local_ip = ipv4["eno1"]
+        elif 'enp35s0f0' in ipv4:
+            local_ip = ipv4['enp35s0f0']
+        elif 'ens8f0' in ipv4:
+            local_ip = ipv4['ens8f0']
+        elif 'enp68s0' in ipv4:
+            local_ip = ipv4['enp68s0']
+        else:
+            breakpoint()
         # Online
         is_online = (
             status.created_at + timedelta(seconds=REPORT_INTERVAL * 3)
