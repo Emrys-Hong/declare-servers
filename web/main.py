@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List
@@ -11,8 +12,6 @@ import streamlit as st
 
 from data_model import MachineStatus
 from scheme import header
-
-import sys
 
 
 curr_dir = Path(__file__).resolve().parent.parent
@@ -165,9 +164,11 @@ def display_servers_html(online_users, offline_users):
 {offline_users_text}
 </div>"""
 
+
 def display_disk_html(disk_detail: List):
     for disk_usage, user in disk_detail:
         st.write(disk_usage + ": " + user)
+
 
 def show_gpu_status_html(gpu_cards):
     table_form = """
@@ -195,16 +196,15 @@ def show_gpu_status_html(gpu_cards):
             mem_free = card.memory_free
             mem_total = card.memory_total
             td = """<td style="border: 2px solid #ddd; padding: 20px; text-align: center;">"""
-            table_content += (f"{td}{card_index}</td>\n"
-            f"{td}{gpu_model}</td>\n"
-            f"{td}{core_util}</td>\n"
-            f"{td}{core_temp}</td>\n"
-            f"{td}{mem_util} \t (free: {mem_free} total: {mem_total})</td>\n"
-                              )
+            table_content += (
+                f"{td}{card_index}</td>\n"
+                f"{td}{gpu_model}</td>\n"
+                f"{td}{core_util}</td>\n"
+                f"{td}{core_temp}</td>\n"
+                f"{td}{mem_util} \t (free: {mem_free} total: {mem_total})</td>\n"
+            )
         table_content += "</tr>\n"
     return table_form.format(table_content=table_content)
-
-
 
 
 def show_gpu_program(programs):
@@ -226,9 +226,13 @@ def show_gpu_program(programs):
 
 
 def show_disk_detail(disk_status):
-    st.markdown(f"Directory: {disk_status.directory}, Usage {percent_color_text(disk_status.usage)}", unsafe_allow_html=True)
+    st.markdown(
+        f"Directory: {disk_status.directory}, Usage {percent_color_text(disk_status.usage)}",
+        unsafe_allow_html=True,
+    )
     st.write(f"Free: {disk_status.free}, Total: {disk_status.total}")
     display_disk_html(disk_status.detail)
+
 
 def show_details(status: MachineStatus):
     local_ip = dict(status.ipv4s)["enp69s0"]
@@ -247,10 +251,11 @@ def show_details(status: MachineStatus):
                 if disk_i == 0:
                     show_disk_detail(status.disk_system)
                 else:
-                    show_disk_detail(status.disk_external[disk_i-1])
+                    show_disk_detail(status.disk_external[disk_i - 1])
 
         # local ip
-        st.markdown(f"""
+        st.markdown(
+            f"""
 <div style='display: flex; flex-wrap: wrap; justify-content: start;'>
 <div><b>IP Address</b> (inet)</div>
 <span style="margin-left: 40px;"></span>
@@ -261,7 +266,9 @@ def show_details(status: MachineStatus):
         )
         # online offline user
         st.markdown(
-            display_servers_html(status.users_info['online_users'], status.users_info["offline_users"]),
+            display_servers_html(
+                status.users_info["online_users"], status.users_info["offline_users"]
+            ),
             unsafe_allow_html=True,
         )
 
@@ -279,22 +286,17 @@ def show_status(status: MachineStatus):
         is_online = (
             status.created_at + timedelta(seconds=REPORT_INTERVAL)
         ) > datetime.now()
-        status_line = (
-            "🟢[Online]"
-            if is_online
-            else "🔴[Offline]"
-        )
+        status_line = "🟢[Online]" if is_online else "🔴[Offline]"
 
         st.write(f"### {status_line} {status.machine_id[-4:]}: ({local_ip})")
 
         # Details
         show_details(status)
 
-        st.markdown('---')
+        st.markdown("---")
         # Usage
         cpu_util = status.cpu_usage
         st.markdown(
-                
             f"**CPU Util:** {percent_color_text(status.cpu_usage)}"
             "\n\n"
             f"**CPU Temp**: {percent_color_text(status.cpu_temp, 'temp')}"
@@ -302,17 +304,16 @@ def show_status(status: MachineStatus):
             f"**RAM Util:** {percent_color_text(status.ram_usage)} (*free: {status.ram_free}, total:{status.ram_total}*)"
             "\n\n"
             f"**System Disk Util**: {percent_color_text(status.disk_system.usage)} (*free: {status.disk_system.free}, total:{status.disk_system.total}*)",
-            
             unsafe_allow_html=True,
         )
 
-        st.markdown('---')
-        
+        st.markdown("---")
+
         # GPU card Usage
         gpu_table = show_gpu_status_html(status.gpu_status)
         st.markdown(gpu_table, unsafe_allow_html=True)
 
-        st.markdown('---')
+        st.markdown("---")
         # GPU program
         show_gpu_program(status.gpu_compute_processes)
 

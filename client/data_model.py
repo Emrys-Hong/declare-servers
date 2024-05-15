@@ -54,8 +54,6 @@ class DiskStatus(BaseModel):
             []
 
 
-
-
 class MachineStatus(BaseModel):
     created_at: datetime = None
     name: str = None
@@ -109,8 +107,6 @@ class MachineStatus(BaseModel):
             return v
         else:
             return {}
-
-
 
     def __repr__(self) -> str:
         return self.model_dump_json()

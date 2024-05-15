@@ -187,16 +187,20 @@ def get_fans_status():
 
 def get_nvidia_smi_version():
     success, smi_output = run_command("nvidia-smi")
-    if not success: return "No NVIDIA driver found"
-    for line in smi_output.split('\n'):
+    if not success:
+        return "No NVIDIA driver found"
+    for line in smi_output.split("\n"):
         if "NVIDIA-SMI" in line:
             return line.strip()
 
+
 def get_cuda_version():
     success, nvcc_version = run_command("/usr/local/cuda/bin/nvcc --version")
-    if not success: return "CUDA not installed"
+    if not success:
+        return "CUDA not installed"
     cuda_version = nvcc_version.split()[-1].split()[-1]
     return cuda_version
+
 
 def run_command(command: str) -> Tuple[bool, str]:
     """
@@ -412,12 +416,14 @@ def get_usage(start_path="."):
                 total_size += os.path.getsize(fp)
     return total_size
 
+
 def human_readable_size(size, decimal_places=2):
     for unit in ["B", "KB", "MB", "GB", "TB", "PB"]:
         if size < 1024.0:
             break
         size /= 1024.0
     return f"{size:.{decimal_places}f}{unit}"
+
 
 def get_disk_detail(directory):
     entries = (os.path.join(directory, entry) for entry in os.listdir(directory))
@@ -427,12 +433,16 @@ def get_disk_detail(directory):
         if os.path.isdir(path) or os.path.isfile(path)
     )
     sorted_entries = sorted(entries, key=lambda x: x[1], reverse=True)
-    sorted_entries = [(user, human_readable_size(usage)) for (user, usage) in sorted_entries]
+    sorted_entries = [
+        (user, human_readable_size(usage)) for (user, usage) in sorted_entries
+    ]
     return sorted_entries
+
 
 def get_disk_usage(directory):
     total, used, free = shutil.disk_usage(directory)
     return total, used, free
+
 
 def get_external_partitions():
     directories = set()
@@ -446,6 +456,8 @@ def get_external_partitions():
 
 disk_system: DiskStatus = DiskStatus()
 disk_external: List[DiskStatus] = [DiskStatus()]
+
+
 def get_disk_status():
     global disk_system
     global disk_external
@@ -460,7 +472,7 @@ def get_disk_status():
             created_at=current_time,
             free=human_readable_size(free),
             total=human_readable_size(total),
-            usage=(used/total),
+            usage=(used / total),
             detail=details,
         )
 
@@ -473,12 +485,13 @@ def get_disk_status():
                 usage=used / total,
                 free=human_readable_size(free),
                 total=human_readable_size(total),
-                usage=(used/total),
+                usage=(used / total),
                 detail=get_disk_detail(partition),
             )
             disk_external.append(disk_ext)
 
     return disk_system, disk_external
+
 
 def get_sys_usage() -> Dict[str, float]:
     info = {}
@@ -517,6 +530,7 @@ def _get_online_users() -> List[str]:
         return list(set(output.split()))
     else:
         return []
+
 
 def _get_all_users() -> List[str]:
     """
@@ -570,6 +584,7 @@ def _get_all_users() -> List[str]:
 
     return all_users
 
+
 def get_users_info() -> Dict[str, List[str]]:
     """
     Get a dictionary containing all users, online users and offline users.
@@ -619,6 +634,7 @@ def _nvidia_exist() -> bool:
     )
     return completed_proc.returncode == 0
 
+
 def get_gpu_status() -> List[GPUStatus]:
     """
     Get GPU utilization info via nvidia-smi command call
@@ -651,6 +667,7 @@ def get_gpu_status() -> List[GPUStatus]:
 
     return gpu_status_list
 
+
 def _get_gpu_uuid_index_map():
     """
     Get GPU uuid to index map
@@ -672,6 +689,7 @@ def _get_gpu_uuid_index_map():
         gpu_uuid_index_map[row[1].strip()] = int(row[0].strip())
 
     return gpu_uuid_index_map
+
 
 def get_gpu_compute_processes() -> List[GPUComputeProcess]:
     cmd = "nvidia-smi --query-compute-apps=pid,gpu_uuid,used_gpu_memory --format=csv"
