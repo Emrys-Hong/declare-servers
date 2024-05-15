@@ -141,6 +141,7 @@ def percent_color_text(per: float, text: str = None) -> str:
         text = f"{(per * 100):.2f}%"
     if text == "temp":
         text = f"{int(per)}°C"
+        per = per / 100
 
     if per > 0.7:
         text = f"<span style='color: red;'>{text}</span>"
@@ -166,8 +167,8 @@ def display_servers_html(online_users, offline_users):
 
 
 def display_disk_html(disk_detail: List):
-    for disk_usage, user in disk_detail:
-        st.write(disk_usage + ": " + user)
+    for user, disk_usage in disk_detail:
+        st.write(user + ": " + disk_usage)
 
 
 def show_gpu_status_html(gpu_cards):
@@ -237,15 +238,16 @@ def show_disk_detail(disk_status):
 def show_details(status: MachineStatus):
     local_ip = dict(status.ipv4s)["enp69s0"]
     with st.expander("Details"):
-        st.write(
-            f"Last Seen: {status.created_at.strftime('%Y-%m-%d %H:%M:%S')}, Uptime: {status.uptime_str}"
+        st.markdown(
+            f"**Last Seen**: {status.created_at.strftime('%Y-%m-%d %H:%M:%S')}, **Uptime**: {status.uptime_str}"
         )
-        st.write(f"Arch: {status.architecture}, System: {status.linux_distro}")
-        st.write(f"Nvidia SMI: {status.nvidia_smi_version}")
-        st.write(f"CUDA Version: {status.cuda_version}")
-        st.write(f"CPU Model: {status.cpu_model}, Cores: {status.cpu_cores}")
+        st.markdown(f"**Arch**: {status.architecture}")
+        st.markdown(f"**System: {status.linux_distro}")
+        st.markdown(f"**Nvidia SMI**: {status.nvidia_smi_version}")
+        st.markdown(f"**CUDA Version**: {status.cuda_version}")
+        st.markdown(f"CPU Model: {status.cpu_model}, Cores: {status.cpu_cores}")
         # System disk information
-        st.write(f"System Disk: {status.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
+        st.markdown(f"**Disk Info**: {status.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
         for disk_i, disk_col in enumerate(st.columns(len(status.disk_external) + 1)):
             with disk_col:
                 if disk_i == 0:
@@ -284,16 +286,18 @@ def show_status(status: MachineStatus):
         local_ip = dict(status.ipv4s)["enp69s0"]
         # Online
         is_online = (
-            status.created_at + timedelta(seconds=REPORT_INTERVAL)
+            status.created_at + timedelta(seconds=REPORT_INTERVAL*3)
         ) > datetime.now()
         status_line = "🟢[Online]" if is_online else "🔴[Offline]"
 
-        st.write(f"### {status_line} {status.machine_id[-4:]}: ({local_ip})")
+        st.header(
+            f"### {status_line} {status.machine_id[-4:]}: ({local_ip})",
+            divider="rainbow",
+        )
 
         # Details
         show_details(status)
 
-        st.markdown("---")
         # Usage
         cpu_util = status.cpu_usage
         st.markdown(

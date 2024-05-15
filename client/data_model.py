@@ -48,7 +48,7 @@ class DiskStatus(BaseModel):
     def process_disk_system_info(cls, v):
         if isinstance(v, List):
             for i, (user, usage) in enumerate(v):
-                v[i] = [usage, mask_sensitive_string(user)]
+                v[i] = [mask_sensitive_string(user), usage]
             return v
         else:
             []
