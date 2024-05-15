@@ -116,3 +116,16 @@ async def view_status(view_key):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/gpu_record", status_code=200, response_model=List[dict])
+async def view_gpu_record(view_key):
+    try:
+        if view_key == configs["view_key"]:
+            return db.get_gpu_record()
+        else:
+            raise ValueError("View key not correct")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

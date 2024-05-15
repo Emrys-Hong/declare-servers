@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List
 
+import pandas as pd
+
 from data_model import MachineStatus
 
 
@@ -21,10 +23,13 @@ with CONFIG_PATH.open(mode="r") as f:
 
 
 class Database:
-    def __init__(self, filename):
-        self.filename = filename
-        self.STATUS_DATA: Dict[str, List[MachineStatus]] = self.load()
+    def __init__(self, record_filename, gpu_record_filename):
         self.last_updated = datetime.now()
+        self.record_filename = record_filename
+        self.gpu_record_filename = gpu_record_filename
+        self.STATUS_DATA: Dict[str, List[MachineStatus]] = self.load_status_data()
+        self.max_records = 60
+        self.gpu_record: List[Dict] = self.load_gpu_record()
 
     def add(self, status: MachineStatus):
         machine_id = status.machine_id
@@ -32,12 +37,19 @@ class Database:
         status_list.append(status)
         current_time = datetime.now()
 
-        # only keep the history for two weeks
-        two_weeks_later = status_list[0].created_at + timedelta(
-            days=configs["history_days"]
-        )
-        if current_time >= two_weeks_later:
+        for process in status.gpu_compute_processes:
+            self.gpu_record.append(
+                dict(user=process.user, time=status.created_at, machine_id=machine_id)
+            )
+
+        # Each status list of certain length
+        if len(status_list) >= 60:
             status_list.pop()
+
+        # only keep the gpu record history for two weeks
+        days_later = status_list[0].created_at + timedelta(days=configs["history_days"])
+        if current_time >= days_later:
+            self.gpu_record.pop()
 
         # only update machine_status.json file every hour
         one_hour_later = self.last_updated + timedelta(
@@ -47,9 +59,9 @@ class Database:
             self.last_updated = current_time
             self.save()
 
-    def load(self):
-        if os.path.exists(self.filename):
-            with open(self.filename, "r") as f:
+    def load_status_data(self):
+        if os.path.exists(self.record_filename):
+            with open(self.record_filename, "r") as f:
                 data = json.load(f)
                 status_data = {
                     key: [MachineStatus.parse_obj(json.loads(o)) for o in values]
@@ -58,9 +70,20 @@ class Database:
                 return defaultdict(list, status_data)
         return defaultdict(list)
 
+    def load_gpu_record(self):
+        if os.path.exists(self.gpu_record_filename):
+            df = pd.read_csv(self.gpu_record_filename)
+            records = df.to_dict(orient="records")
+            return records
+        else:
+            return []
+
     def save(self):
-        with open(self.filename, "w") as f:
+        with open(self.record_filename, "w") as f:
             json.dump(self.to_dict(), f)
+
+        df = pd.DataFrame(self.gpu_record)
+        df.to_csv(self.gpu_record_filename, index=False)
 
     def get_status(self) -> List[MachineStatus]:
         machine_ids = sorted(list(self.STATUS_DATA.keys()), reverse=True)
@@ -69,6 +92,9 @@ class Database:
         ]
         return machine_status
 
+    def get_gpu_record(self) -> list[dict]:
+        return self.gpu_record
+
     def to_dict(self) -> dict:
         return {
             key: [status.json() for status in status_list]
@@ -76,4 +102,6 @@ class Database:
         }
 
 
-DB = Database(filename="./machine_status.json")
+DB = Database(
+    record_filename="./machine_status.json", gpu_record_filename="./gpu_status.json"
+)
