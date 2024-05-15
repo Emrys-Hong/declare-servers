@@ -33,7 +33,10 @@ class GPUComputeProcess(BaseModel):
 
     @validator("user", pre=True, always=True)
     def process_gpu_compute_info(cls, v):
-        return mask_sensitive_string(v)
+        if v:
+            return mask_sensitive_string(v)
+        else:
+            return ""
 
 
 class DiskStatus(BaseModel):

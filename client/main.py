@@ -22,7 +22,6 @@ from puts import get_logger
 from data_model import DiskStatus, GPUComputeProcess, GPUStatus, MachineStatus
 from helpers import guid
 
-
 curr_dir = Path(__file__).resolve().parent.parent
 CONFIG_PATH = curr_dir / "config.json"
 
