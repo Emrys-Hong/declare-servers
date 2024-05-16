@@ -8,8 +8,11 @@ import numpy as np
 import pandas as pd
 import requests
 import streamlit as st
+import warnings
 
 from data_model import MachineStatus
+
+warnings.filterwarnings('ignore', module='pandas')
 
 
 curr_dir = Path(__file__).resolve().parent.parent
@@ -33,8 +36,6 @@ def moving_average(data, window_size=5):
     return data
 
 
-def header():
-    st.title("DeCLaRe Server Status")
 
 
 def get_server_status() -> List[MachineStatus]:
@@ -169,14 +170,14 @@ def show_details(status: MachineStatus):
     elif 'enp68s0' in ipv4:
         local_ip = ipv4['enp68s0']
     else:
-        breakpoint()
+        raise ValueError("cannot find local_ip")
 
     with st.expander("Details"):
         st.markdown(
             f"**Last Seen**: {status.created_at.strftime('%Y-%m-%d %H:%M:%S')}, **Uptime**: {status.uptime_str}"
         )
         st.markdown(f"**Arch**: {status.architecture}")
-        st.markdown(f"**System: {status.linux_distro}")
+        st.markdown(f"**System**: {status.linux_distro}")
         st.markdown(f"**Nvidia SMI**: {status.nvidia_smi_version}")
         st.markdown(f"**CUDA Version**: {status.cuda_version}")
         st.markdown(f"CPU Model: {status.cpu_model}, Cores: {status.cpu_cores}")
@@ -211,9 +212,10 @@ def show_details(status: MachineStatus):
 
 def show_gpu_history(df):
     if len(df) > 0:
-        df.time = pd.to_datetime(df.time)
+        df.loc[:, 'time'] = pd.to_datetime(df.loc[: ,'time'], format="mixed")
+        grouper = [pd.Grouper(key='time', freq="1h"), "user"]
         grouped_df = (
-            df.groupby([pd.Grouper(key="time", freq="1h"), "user"])
+            df.groupby(grouper)
             .size()
             .reset_index(name="count")
         )
@@ -250,18 +252,19 @@ def show_status(status: MachineStatus, gpu_record: pd.DataFrame):
         elif 'enp68s0' in ipv4:
             local_ip = ipv4['enp68s0']
         else:
-            breakpoint()
+            raise ValueError("cannot find local_ip")
         # Online
         is_online = (
             status.created_at + timedelta(seconds=REPORT_INTERVAL * 3)
         ) > datetime.now()
         status_line = "🟢[Online]" if is_online else "🔴[Offline]"
 
+        st.sidebar.markdown(f"[{local_ip}](#{status.machine_id[-4:]})")
         st.header(
-            local_ip,
+            status.machine_id[-4:],
             divider="rainbow",
         )
-        st.markdown(f"### {status_line} {status.machine_id[-4:]}: ({local_ip})")
+        st.markdown(f"### {status_line} ({local_ip})")
 
         # Details
         show_details(status)
@@ -299,7 +302,8 @@ def show_machine_status(server_status: List[MachineStatus], gpu_record: pd.DataF
 
 
 def main():
-    header()
+    st.title("DeCLaRe Server Status")
+    st.sidebar.header("Server IP")
     machine_status = get_server_status()
     gpu_record = pd.DataFrame(get_gpu_record())
     show_machine_status(machine_status, gpu_record)

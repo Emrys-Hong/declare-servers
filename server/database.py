@@ -43,8 +43,8 @@ class Database:
             )
 
         # Each status list of certain length
-        if len(status_list) >= 60:
-            status_list.pop()
+        if len(status_list) >= self.max_records:
+            status_list.pop(0)
 
         # only keep the gpu record history for two weeks
         days_later = status_list[0].created_at + timedelta(days=configs["history_days"])

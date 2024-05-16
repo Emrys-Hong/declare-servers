@@ -65,10 +65,10 @@ async def hello():
     return {"msg": "Hello, this is Emrys."}
 
 
-@app.get("/get", response_model=List[MachineStatus])
+@app.get("/get")
 async def get_status():
     """Temporary endpoint for testing, will deprecated soon"""
-    return list(db.DB.STATUS_DATA.values())
+    return list(db.STATUS_DATA.values())
 
 
 ###############################################################################
