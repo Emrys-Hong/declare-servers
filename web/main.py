@@ -1,5 +1,6 @@
 import json
 import sys
+import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List
@@ -8,11 +9,11 @@ import numpy as np
 import pandas as pd
 import requests
 import streamlit as st
-import warnings
 
 from data_model import MachineStatus
 
-warnings.filterwarnings('ignore', module='pandas')
+
+warnings.filterwarnings("ignore", module="pandas")
 
 
 curr_dir = Path(__file__).resolve().parent.parent
@@ -34,8 +35,6 @@ def moving_average(data, window_size=5):
     for _ in range(2):
         data = np.convolve(data, np.ones(window_size) / window_size, mode="same")
     return data
-
-
 
 
 def get_server_status() -> List[MachineStatus]:
@@ -163,12 +162,12 @@ def show_details(status: MachineStatus):
         local_ip = ipv4["enp69s0"]
     elif "eno1" in ipv4:
         local_ip = ipv4["eno1"]
-    elif 'enp35s0f0' in ipv4:
-        local_ip = ipv4['enp35s0f0']
-    elif 'ens8f0' in ipv4:
-        local_ip = ipv4['ens8f0']
-    elif 'enp68s0' in ipv4:
-        local_ip = ipv4['enp68s0']
+    elif "enp35s0f0" in ipv4:
+        local_ip = ipv4["enp35s0f0"]
+    elif "ens8f0" in ipv4:
+        local_ip = ipv4["ens8f0"]
+    elif "enp68s0" in ipv4:
+        local_ip = ipv4["enp68s0"]
     else:
         raise ValueError("cannot find local_ip")
 
@@ -212,13 +211,9 @@ def show_details(status: MachineStatus):
 
 def show_gpu_history(df):
     if len(df) > 0:
-        df.loc[:, 'time'] = pd.to_datetime(df.loc[: ,'time'], format="mixed")
-        grouper = [pd.Grouper(key='time', freq="1h"), "user"]
-        grouped_df = (
-            df.groupby(grouper)
-            .size()
-            .reset_index(name="count")
-        )
+        df.loc[:, "time"] = pd.to_datetime(df.loc[:, "time"], format="mixed")
+        grouper = [pd.Grouper(key="time", freq="1h"), "user"]
+        grouped_df = df.groupby(grouper).size().reset_index(name="count")
 
         table = grouped_df.pivot_table(
             index="time", columns="user", values="count", fill_value=0
@@ -245,12 +240,12 @@ def show_status(status: MachineStatus, gpu_record: pd.DataFrame):
             local_ip = ipv4["enp69s0"]
         elif "eno1" in ipv4:
             local_ip = ipv4["eno1"]
-        elif 'enp35s0f0' in ipv4:
-            local_ip = ipv4['enp35s0f0']
-        elif 'ens8f0' in ipv4:
-            local_ip = ipv4['ens8f0']
-        elif 'enp68s0' in ipv4:
-            local_ip = ipv4['enp68s0']
+        elif "enp35s0f0" in ipv4:
+            local_ip = ipv4["enp35s0f0"]
+        elif "ens8f0" in ipv4:
+            local_ip = ipv4["ens8f0"]
+        elif "enp68s0" in ipv4:
+            local_ip = ipv4["enp68s0"]
         else:
             raise ValueError("cannot find local_ip")
         # Online
