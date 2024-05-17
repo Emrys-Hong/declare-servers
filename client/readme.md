@@ -5,3 +5,8 @@ then run
 ```
 sudo ./installer install
 ```
+
+check service logs
+```
+journalctl -u ServerStatus.service
+```
