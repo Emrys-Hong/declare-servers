@@ -1,5 +1,6 @@
 import json
 import sys
+import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List
@@ -10,6 +11,9 @@ import requests
 import streamlit as st
 
 from data_model import MachineStatus
+
+
+warnings.filterwarnings("ignore", module="pandas")
 
 
 curr_dir = Path(__file__).resolve().parent.parent
@@ -31,10 +35,6 @@ def moving_average(data, window_size=5):
     for _ in range(2):
         data = np.convolve(data, np.ones(window_size) / window_size, mode="same")
     return data
-
-
-def header():
-    st.title("DeCLaRe Server Status")
 
 
 def get_server_status() -> List[MachineStatus]:
@@ -157,13 +157,26 @@ def show_disk_detail(disk_status):
 
 
 def show_details(status: MachineStatus):
-    local_ip = dict(status.ipv4s)["enp69s0"]
+    ipv4 = dict(status.ipv4s)
+    if "enp69s0" in ipv4:
+        local_ip = ipv4["enp69s0"]
+    elif "eno1" in ipv4:
+        local_ip = ipv4["eno1"]
+    elif "enp35s0f0" in ipv4:
+        local_ip = ipv4["enp35s0f0"]
+    elif "ens8f0" in ipv4:
+        local_ip = ipv4["ens8f0"]
+    elif "enp68s0" in ipv4:
+        local_ip = ipv4["enp68s0"]
+    else:
+        raise ValueError("cannot find local_ip")
+
     with st.expander("Details"):
         st.markdown(
             f"**Last Seen**: {status.created_at.strftime('%Y-%m-%d %H:%M:%S')}, **Uptime**: {status.uptime_str}"
         )
         st.markdown(f"**Arch**: {status.architecture}")
-        st.markdown(f"**System: {status.linux_distro}")
+        st.markdown(f"**System**: {status.linux_distro}")
         st.markdown(f"**Nvidia SMI**: {status.nvidia_smi_version}")
         st.markdown(f"**CUDA Version**: {status.cuda_version}")
         st.markdown(f"CPU Model: {status.cpu_model}, Cores: {status.cpu_cores}")
@@ -198,12 +211,9 @@ def show_details(status: MachineStatus):
 
 def show_gpu_history(df):
     if len(df) > 0:
-        df.time = pd.to_datetime(df.time)
-        grouped_df = (
-            df.groupby([pd.Grouper(key="time", freq="1h"), "user"])
-            .size()
-            .reset_index(name="count")
-        )
+        df.loc[:, "time"] = pd.to_datetime(df.loc[:, "time"], format="mixed")
+        grouper = [pd.Grouper(key="time", freq="1h"), "user"]
+        grouped_df = df.groupby(grouper).size().reset_index(name="count")
 
         table = grouped_df.pivot_table(
             index="time", columns="user", values="count", fill_value=0
@@ -225,18 +235,31 @@ def show_status(status: MachineStatus, gpu_record: pd.DataFrame):
 
     with st.container():
         # IP
-        local_ip = dict(status.ipv4s)["enp69s0"]
+        ipv4 = dict(status.ipv4s)
+        if "enp69s0" in ipv4:
+            local_ip = ipv4["enp69s0"]
+        elif "eno1" in ipv4:
+            local_ip = ipv4["eno1"]
+        elif "enp35s0f0" in ipv4:
+            local_ip = ipv4["enp35s0f0"]
+        elif "ens8f0" in ipv4:
+            local_ip = ipv4["ens8f0"]
+        elif "enp68s0" in ipv4:
+            local_ip = ipv4["enp68s0"]
+        else:
+            raise ValueError("cannot find local_ip")
         # Online
         is_online = (
             status.created_at + timedelta(seconds=REPORT_INTERVAL * 3)
         ) > datetime.now()
         status_line = "🟢[Online]" if is_online else "🔴[Offline]"
 
+        st.sidebar.markdown(f"[{local_ip}](#{status.machine_id[-4:]})")
         st.header(
-            local_ip,
+            status.machine_id[-4:],
             divider="rainbow",
         )
-        st.markdown(f"### {status_line} {status.machine_id[-4:]}: ({local_ip})")
+        st.markdown(f"### {status_line} ({local_ip})")
 
         # Details
         show_details(status)
@@ -274,7 +297,8 @@ def show_machine_status(server_status: List[MachineStatus], gpu_record: pd.DataF
 
 
 def main():
-    header()
+    st.title("DeCLaRe Server Status")
+    st.sidebar.header("Server IP")
     machine_status = get_server_status()
     gpu_record = pd.DataFrame(get_gpu_record())
     show_machine_status(machine_status, gpu_record)
