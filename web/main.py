@@ -253,8 +253,9 @@ def show_status(status: MachineStatus, gpu_record: pd.DataFrame):
             status.created_at + timedelta(seconds=REPORT_INTERVAL * 3)
         ) > datetime.now()
         status_line = "🟢[Online]" if is_online else "🔴[Offline]"
+        status_symbol = "🟢" if is_online else "🔴"
 
-        st.sidebar.markdown(f"[{local_ip}](#{status.machine_id[-4:]})")
+        st.sidebar.markdown(f"[{local_ip}](#{status.machine_id[-4:]}) {status_symbol}")
         st.header(
             status.machine_id[-4:],
             divider="rainbow",
