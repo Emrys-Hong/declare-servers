@@ -50,3 +50,8 @@ uvicorn main:app --reload --port 5000
 ```
 sudo timedatectl set-timezone Asia/Singapore
 ```
+
+7. Start the service
+```
+./installer install
+```
