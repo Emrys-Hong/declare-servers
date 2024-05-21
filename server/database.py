@@ -60,15 +60,20 @@ class Database:
             self.save()
 
     def load_status_data(self):
-        if os.path.exists(self.record_filename):
-            with open(self.record_filename, "r") as f:
-                data = json.load(f)
-                status_data = {
-                    key: [MachineStatus.parse_obj(json.loads(o)) for o in values]
-                    for key, values in data.items()
-                }
-                return defaultdict(list, status_data)
-        return defaultdict(list)
+        try:
+            if os.path.exists(self.record_filename):
+                with open(self.record_filename, "r") as f:
+                    data = json.load(f)
+                    status_data = {
+                        key: [MachineStatus.parse_obj(json.loads(o)) for o in values]
+                        for key, values in data.items()
+                    }
+                    return defaultdict(list, status_data)
+            return defaultdict(list)
+        except Exception as e:
+            print(e)
+            return defaultdict(list)
+
 
     def load_gpu_record(self):
         if os.path.exists(self.gpu_record_filename):
