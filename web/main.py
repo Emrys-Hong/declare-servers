@@ -38,22 +38,32 @@ def moving_average(data, window_size=5):
 
 
 def get_server_status() -> List[MachineStatus]:
-    params = {"view_key": VIEW_KEY}
-    url = f"http://localhost:{configs['server_port']}/server_status/"
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        items = response.json()
-    server_status = [MachineStatus.parse_obj(item) for item in items]
-    return server_status
+    try:
+        params = {"view_key": VIEW_KEY}
+        url = f"http://localhost:{configs['server_port']}/server_status/"
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            items = response.json()
+        server_status = [MachineStatus.parse_obj(item) for item in items]
+        print("Sucessfully loaded machine status")
+        return server_status
+    except Exception as e:
+        print(e)
+        return []
 
 
 def get_gpu_record() -> List[dict]:
-    params = {"view_key": VIEW_KEY}
-    url = f"http://localhost:{configs['server_port']}/gpu_record/"
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        items = response.json()
-    return items
+    try:
+        params = {"view_key": VIEW_KEY}
+        url = f"http://localhost:{configs['server_port']}/gpu_record/"
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            items = response.json()
+        print("Sucessfully loaded GPU record")
+        return items
+    except Exception as e:
+        print(e)
+        return []
 
 
 def percent_color_text(per: float, text: str = None) -> str:
@@ -300,8 +310,10 @@ def show_machine_status(server_status: List[MachineStatus], gpu_record: pd.DataF
 def main():
     st.title("DeCLaRe Server Status")
     st.sidebar.header("Server IP")
+
     machine_status = get_server_status()
     gpu_record = pd.DataFrame(get_gpu_record())
+
     show_machine_status(machine_status, gpu_record)
 
     return

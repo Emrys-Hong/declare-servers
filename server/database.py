@@ -43,8 +43,9 @@ class Database:
             )
 
         # Each status list of certain length
-        if len(status_list) >= self.max_records:
+        while len(status_list) >= self.max_records:
             status_list.pop(0)
+
 
         # only keep the gpu record history for two weeks
         days_later = status_list[0].created_at + timedelta(days=configs["history_days"])
@@ -87,7 +88,7 @@ class Database:
         with open(self.record_filename, "w") as f:
             json.dump(self.to_dict(), f)
 
-        df = pd.DataFrame(self.gpu_record)
+        df = pd.DataFrame(self.gpu_record[:1e5])
         df.to_csv(self.gpu_record_filename, index=False)
 
     def get_status(self) -> List[MachineStatus]:
