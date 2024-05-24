@@ -28,7 +28,8 @@ class Database:
         self.record_filename = record_filename
         self.gpu_record_filename = gpu_record_filename
         self.STATUS_DATA: Dict[str, List[MachineStatus]] = self.load_status_data()
-        self.max_records = 60
+        self.max_records = 10
+        self.max_gpu_records = 1e5
         self.gpu_record: List[Dict] = self.load_gpu_record()
 
     def add(self, status: MachineStatus):
@@ -50,6 +51,8 @@ class Database:
         # only keep the gpu record history for two weeks
         days_later = status_list[0].created_at + timedelta(days=configs["history_days"])
         if current_time >= days_later:
+            self.gpu_record.pop(0)
+        if len(self.gpu_record) >= self.max_gpu_records:
             self.gpu_record.pop(0)
 
         # only update machine_status.json file every hour
@@ -88,7 +91,7 @@ class Database:
         with open(self.record_filename, "w") as f:
             json.dump(self.to_dict(), f)
 
-        df = pd.DataFrame(self.gpu_record[:1e5])
+        df = pd.DataFrame(self.gpu_record)
         df.to_csv(self.gpu_record_filename, index=False)
 
     def get_status(self) -> List[MachineStatus]:
