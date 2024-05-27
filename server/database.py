@@ -52,7 +52,7 @@ class Database:
         days_later = status_list[0].created_at + timedelta(days=configs["history_days"])
         if current_time >= days_later:
             self.gpu_record.pop(0)
-        if len(self.gpu_record) >= self.max_gpu_records:
+        while len(self.gpu_record) >= self.max_gpu_records:
             self.gpu_record.pop(0)
 
         # only update machine_status.json file every hour
