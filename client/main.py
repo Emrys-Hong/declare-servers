@@ -449,7 +449,7 @@ def get_external_partitions():
     partitions = psutil.disk_partitions()
     for partition in partitions:
         usage = psutil.disk_usage(partition.mountpoint)
-        if usage.total > 1e10:
+        if usage.total > 1e11: # bigger than 100GB
             directories.add(partition.mountpoint)
     return directories - set(["/"])
 
