@@ -212,15 +212,18 @@ def show_details(status: MachineStatus):
 def show_gpu_history(df):
     if len(df) > 0:
         df.loc[:, "time"] = pd.to_datetime(df.loc[:, "time"], format="mixed")
-        grouper = [pd.Grouper(key="time", freq="1h"), "user"]
+
+        grouper = [pd.Grouper(key="time", freq="D"), "user"]
         grouped_df = df.groupby(grouper).size().reset_index(name="count")
 
         table = grouped_df.pivot_table(
             index="time", columns="user", values="count", fill_value=0
         )
         table = table.divide(
-            3600 / configs["report_interval"]
-        )  # one hour have 360 ten seconds interval
+            3600 * 24 / configs["report_interval"]
+        )  # one hour * 24 / interval
+        table.index = table.index.strftime('%m-%d')
+
 
         window_size = 5
         if len(table) > window_size:
@@ -240,7 +243,7 @@ def show_status(status: MachineStatus, gpu_record: pd.DataFrame):
             if "en" in k: local_ip = v
         # Online
         is_online = (
-            status.created_at + timedelta(seconds=REPORT_INTERVAL * 3)
+            status.created_at + timedelta(seconds=REPORT_INTERVAL * 5)
         ) > datetime.now()
         status_line = "🟢[Online]" if is_online else "🔴[Offline]"
         status_symbol = "🟢" if is_online else "🔴"
