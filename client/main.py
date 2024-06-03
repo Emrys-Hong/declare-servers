@@ -463,37 +463,42 @@ def get_disk_status():
     global disk_external
     current_time = datetime.datetime.now()
     # Run disk command every hour because it is computation extensive
-    if (
-        disk_system.created_at
-        + datetime.timedelta(seconds=configs["disk_report_interval"])
-        < current_time
-    ):
-        total, used, free = get_disk_usage("/home")
-        disk_system.usage = used / total
-        details = get_disk_detail("/home")
-        disk_system = DiskStatus(
-            directory="/home",
+    # if (
+    #     disk_system.created_at
+    #     + datetime.timedelta(seconds=configs["disk_report_interval"])
+    #     < current_time
+    # ):
+
+    total, used, free = get_disk_usage("/home")
+    disk_system.usage = used / total
+    details = get_disk_detail("/home")
+    disk_system = DiskStatus(
+        directory="/home",
+        created_at=current_time,
+        usage=(used / total),
+        free=human_readable_size(free),
+        total=human_readable_size(total),
+        detail=details,
+    )
+
+    disk_external = []
+    for partition in get_external_partitions():
+        total, used, free = get_disk_usage(partition)
+        disk_ext = DiskStatus(
+            directory=partition,
             created_at=current_time,
-            usage=(used / total),
+            usage=used / total,
             free=human_readable_size(free),
             total=human_readable_size(total),
-            detail=details,
+            detail=get_disk_detail(partition),
         )
+        disk_external.append(disk_ext)
 
-        disk_external = []
-        for partition in get_external_partitions():
-            total, used, free = get_disk_usage(partition)
-            disk_ext = DiskStatus(
-                directory=partition,
-                created_at=current_time,
-                usage=used / total,
-                free=human_readable_size(free),
-                total=human_readable_size(total),
-                detail=get_disk_detail(partition),
-            )
-            disk_external.append(disk_ext)
+from apscheduler.schedulers.background import BackgroundScheduler
+scheduler = BackgroundScheduler(executors={'default': {'type': 'threadpool', 'max_workers': 1}})
+scheduler.add_job(get_disk_status, 'interval', seconds=configs["disk_report_interval"])
+scheduler.start()
 
-    return disk_system, disk_external
 
 
 def get_sys_usage() -> Dict[str, float]:
@@ -506,7 +511,7 @@ def get_sys_usage() -> Dict[str, float]:
         info["ram_free"] = human_readable_size(mem.available)
         info["ram_usage"] = round(mem.percent / 100, 5)  # 0 ~ 1
 
-        info["disk_system"], info["disk_external"] = get_disk_status()
+        info["disk_system"], info["disk_external"] = disk_system, disk_external
 
     except Exception as e:
         logger.error(e)

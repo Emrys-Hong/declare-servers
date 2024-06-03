@@ -167,18 +167,8 @@ def show_disk_detail(disk_status):
 
 def show_details(status: MachineStatus):
     ipv4 = dict(status.ipv4s)
-    if "enp69s0" in ipv4:
-        local_ip = ipv4["enp69s0"]
-    elif "eno1" in ipv4:
-        local_ip = ipv4["eno1"]
-    elif "enp35s0f0" in ipv4:
-        local_ip = ipv4["enp35s0f0"]
-    elif "ens8f0" in ipv4:
-        local_ip = ipv4["ens8f0"]
-    elif "enp68s0" in ipv4:
-        local_ip = ipv4["enp68s0"]
-    else:
-        raise ValueError("cannot find local_ip")
+    for k, v in ipv4.items():
+        if "en" in k: local_ip = v
 
     with st.expander("Details"):
         st.markdown(
@@ -221,15 +211,18 @@ def show_details(status: MachineStatus):
 def show_gpu_history(df):
     if len(df) > 0:
         df.loc[:, "time"] = pd.to_datetime(df.loc[:, "time"], format="mixed")
-        grouper = [pd.Grouper(key="time", freq="1h"), "user"]
+
+        grouper = [pd.Grouper(key="time", freq="D"), "user"]
         grouped_df = df.groupby(grouper).size().reset_index(name="count")
 
         table = grouped_df.pivot_table(
             index="time", columns="user", values="count", fill_value=0
         )
         table = table.divide(
-            3600 / configs["report_interval"]
-        )  # one hour have 360 ten seconds interval
+            3600 * 24 / configs["report_interval"]
+        )  # one hour * 24 / interval
+        table.index = table.index.strftime('%m-%d')
+
 
         window_size = 5
         if len(table) > window_size:
@@ -245,21 +238,11 @@ def show_status(status: MachineStatus, gpu_record: pd.DataFrame):
     with st.container():
         # IP
         ipv4 = dict(status.ipv4s)
-        if "enp69s0" in ipv4:
-            local_ip = ipv4["enp69s0"]
-        elif "eno1" in ipv4:
-            local_ip = ipv4["eno1"]
-        elif "enp35s0f0" in ipv4:
-            local_ip = ipv4["enp35s0f0"]
-        elif "ens8f0" in ipv4:
-            local_ip = ipv4["ens8f0"]
-        elif "enp68s0" in ipv4:
-            local_ip = ipv4["enp68s0"]
-        else:
-            raise ValueError("cannot find local_ip")
+        for k, v in ipv4.items():
+            if "en" in k: local_ip = v
         # Online
         is_online = (
-            status.created_at + timedelta(seconds=REPORT_INTERVAL * 3)
+            status.created_at + timedelta(seconds=REPORT_INTERVAL * 5)
         ) > datetime.now()
         status_line = "🟢[Online]" if is_online else "🔴[Offline]"
         status_symbol = "🟢" if is_online else "🔴"
