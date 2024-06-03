@@ -22,7 +22,6 @@ from puts import get_logger
 from data_model import DiskStatus, GPUComputeProcess, GPUStatus, MachineStatus
 from helpers import guid
 
-
 curr_dir = Path(__file__).resolve().parent.parent
 CONFIG_PATH = curr_dir / "config.json"
 
@@ -449,7 +448,7 @@ def get_external_partitions():
     partitions = psutil.disk_partitions()
     for partition in partitions:
         usage = psutil.disk_usage(partition.mountpoint)
-        if usage.total / 1024 / 1024 / 1024 > 500: # bigger than 500GB
+        if usage.total / 1024 / 1024 / 1024 > 500:  # bigger than 500GB
             directories.add(partition.mountpoint)
     return directories - set(["/"])
 
@@ -494,11 +493,14 @@ def get_disk_status():
         )
         disk_external.append(disk_ext)
 
-from apscheduler.schedulers.background import BackgroundScheduler
-scheduler = BackgroundScheduler(executors={'default': {'type': 'threadpool', 'max_workers': 1}})
-scheduler.add_job(get_disk_status, 'interval', seconds=configs["disk_report_interval"])
-scheduler.start()
 
+from apscheduler.schedulers.background import BackgroundScheduler
+
+scheduler = BackgroundScheduler(
+    executors={"default": {"type": "threadpool", "max_workers": 1}}
+)
+scheduler.add_job(get_disk_status, "interval", seconds=configs["disk_report_interval"])
+scheduler.start()
 
 
 def get_sys_usage() -> Dict[str, float]:

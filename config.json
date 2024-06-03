@@ -3,7 +3,7 @@
     "web_address": "serverstatus.aischolar.academy",
     "report_key": "PxHWZArEKqMEnb9N6c9M",
     "view_key": "PxHWZArEKqMEnb9N6c9M",
-    "report_interval": 300,
+    "report_interval": 60,
     "disk_report_interval": 3600,
     "write_interval": 1800,
     "history_days": 7,

@@ -168,7 +168,8 @@ def show_disk_detail(disk_status):
 def show_details(status: MachineStatus):
     ipv4 = dict(status.ipv4s)
     for k, v in ipv4.items():
-        if "en" in k: local_ip = v
+        if "en" in k:
+            local_ip = v
 
     with st.expander("Details"):
         st.markdown(
@@ -221,8 +222,7 @@ def show_gpu_history(df):
         table = table.divide(
             3600 * 24 / configs["report_interval"]
         )  # one hour * 24 / interval
-        table.index = table.index.strftime('%m-%d')
-
+        table.index = table.index.strftime("%m-%d")
 
         window_size = 5
         if len(table) > window_size:
@@ -239,7 +239,8 @@ def show_status(status: MachineStatus, gpu_record: pd.DataFrame):
         # IP
         ipv4 = dict(status.ipv4s)
         for k, v in ipv4.items():
-            if "en" in k: local_ip = v
+            if "en" in k:
+                local_ip = v
         # Online
         is_online = (
             status.created_at + timedelta(seconds=REPORT_INTERVAL * 5)
