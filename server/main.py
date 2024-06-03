@@ -13,7 +13,6 @@ from puts import get_logger
 from data_model import MachineStatus
 from database import DB as db
 
-
 logger = get_logger()
 logger.setLevel(INFO)
 

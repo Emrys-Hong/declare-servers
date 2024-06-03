@@ -12,7 +12,6 @@ import streamlit as st
 
 from data_model import MachineStatus
 
-
 warnings.filterwarnings("ignore", module="pandas")
 
 

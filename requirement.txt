@@ -7,3 +7,5 @@ uvicorn
 fastapi
 streamlit-authenticator
 puts
+apscheduler
+pydantic

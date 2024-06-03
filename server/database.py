@@ -9,7 +9,6 @@ import pandas as pd
 
 from data_model import MachineStatus
 
-
 curr_dir = Path(__file__).resolve().parent.parent
 CONFIG_PATH = curr_dir / "config.json"
 
@@ -47,7 +46,6 @@ class Database:
         while len(status_list) >= self.max_records:
             status_list.pop(0)
 
-
         # only keep the gpu record history for two weeks
         days_later = status_list[0].created_at + timedelta(days=configs["history_days"])
         if current_time >= days_later:
@@ -77,7 +75,6 @@ class Database:
         except Exception as e:
             print(e)
             return defaultdict(list)
-
 
     def load_gpu_record(self):
         if os.path.exists(self.gpu_record_filename):
