@@ -243,7 +243,7 @@ def show_status(status: MachineStatus, gpu_record: pd.DataFrame):
                 local_ip = v
         # Online
         is_online = (
-            status.created_at + timedelta(seconds=REPORT_INTERVAL * 5)
+            status.created_at + timedelta(seconds=REPORT_INTERVAL)
         ) > datetime.now()
         status_line = "🟢[Online]" if is_online else "🔴[Offline]"
         status_symbol = "🟢" if is_online else "🔴"
